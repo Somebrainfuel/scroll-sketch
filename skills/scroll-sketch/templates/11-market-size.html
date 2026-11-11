@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Market size · Scroll Sketch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Shantell+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../lib/scroll-sketch.css">
+<!-- optional theme: <link rel="stylesheet" href="../lib/themes/business-design-labs.css"> -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script src="../lib/scroll-sketch.js"></script>
+</head>
+<body>
+<!--
+  TEMPLATE: Market size
+  Use it when: you size a market from the top down (TAM, SAM, SOM) and want the small,
+  realistic number to be the one people remember.
+  Scroll beats: the total market circle draws → the part you can serve draws inside it → the part
+  you can realistically win draws inside that → it gets an accent ring and a note with its share
+  of the total → a dashed dot shows how small it would be drawn to scale.
+  The circles are deliberately NOT to scale (true areas would make the smallest one a speck):
+  their sizes are set in STORY.sizes, and the chart and note both say so.
+  Edit the STORY block in the script at the bottom. Nothing else needs to change.
+-->
+<main>
+<div class="col">
+  <div class="meta"><b>Example</b> · illustrative: a fictional company</div>
+  <h1>A £2.4bn market, an £18m plan</h1>
+  <p class="lede">An AI bookkeeping app for UK sole traders can point at a big number. The number that matters is the small one inside it.</p>
+</div>
+
+<section class="scrolly" id="chart" style="--len:440" aria-label="Chart: total, serviceable and obtainable market">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="Three nested circles, not to scale. The largest is the total market, £2.4bn: all UK sole traders' bookkeeping. Inside it, the part the app can serve, £600m. Inside that, the part it can realistically win, £18m, ringed and labelled about 0.75% of the total. A small dashed circle shows how small that part would look drawn to scale."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">Illustrative numbers for a fictional company. The circles are not to scale: drawn by area, the £18m circle would be less than a tenth as wide as the £2.4bn one, as the small dashed circle shows.</p>
+  <p>Write what comes next here.</p>
+</div>
+</main>
+
+<script>
+/* ========== EDIT THE STORY ========== */
+const STORY = {
+  // values in millions; 1,000 and over shows as bn
+  unit: '£',
+  // each circle: its value and the rows of words under it (the first row is the name, the rest explain it)
+  rings: [
+    { value: 2400, rows: ['total market (TAM)', 'all UK sole traders’ bookkeeping'] },
+    { value: 600,  rows: ['what we can serve (SAM)', 'those who’d use an app'] },
+    { value: 18,   rows: ['what we can', 'realistically win', '(SOM)'] },
+  ],
+  // circle widths as a share of the biggest. NOT to scale on purpose: say so in the note.
+  sizes: [1, .64, .38],
+  // the note by the smallest circle. {pct} is its share of the total, worked out from the values.
+  note: ['≈ {pct} of the total'],
+  scaleNote: 'drawn to scale:',          // sits beside a dashed circle at the true size
+  steps: [
+    [0,    'Scroll to size the market.'],
+    [.005, 'Start with everything: what all UK sole traders spend on bookkeeping, {tam} a year.'],
+    [.19,  'The part an app like this could serve: {sam}.'],
+    [.39,  'The part it could realistically win: {som}.'],
+    [.60,  'That’s the number to plan around: about {pct} of the total.'],
+    [.78,  'The circles aren’t to scale. Drawn honestly, the plan is a dot.'],
+  ],
+  timing: { rings: [[.01, .12], [.21, .32], [.41, .52]], ring: [.62, .68], note: .69, scale: .8 },
+};
+
+/* ========== DRAWING (no need to edit) ========== */
+const { scene, el, txt, seg, show, grow, label, arrow, pen } = Sketch;
+const R0 = STORY.rings;
+const money = v => STORY.unit + (v >= 1000 ? +(v / 1000).toFixed(1) + 'bn' : +v.toFixed(1) + 'm');
+const PCT = R0[R0.length - 1].value / R0[0].value * 100;
+const pctS = (PCT < 1 ? +PCT.toFixed(2) : +PCT.toPrecision(2)) + '%';
+const TOKENS = { tam: money(R0[0].value), sam: money(R0[1].value), som: money(R0[R0.length - 1].value), pct: pctS };
+const fill = s => s.replace(/\{(\w+)\}/g, (m, k) => TOKENS[k] ?? m);
+
+scene('chart', {
+  caps: STORY.steps.map(([p, t]) => [p, fill(t)]),
+  build(ctx) {
+    const { svg, W, mob, vh, rc } = ctx, S = STORY, fs = ctx.fs;
+    // wide: circles on the left, note on the right. Narrow: circles full width, note underneath.
+    const R = mob ? Math.min((W - 16) / 2, (vh - 330) / 2) : Math.min(Math.max(Math.min(W * .6, vh - 190), 360), 470) / 2 - 8;
+    ctx.size(mob ? 2 * R + 128 : 2 * R + 16);
+    const cx = mob ? W / 2 : Math.max(R + 8, W * .36), bottom = 2 * R + 8;
+    const circles = S.rings.map((r, i) => ({ ...r, r: R * S.sizes[i], cy: bottom - R * S.sizes[i] }));
+
+    const items = circles.map((c, i) => {
+      const g = el('g', { class: 'c-ink' }, svg);
+      g.appendChild(rc.circle(cx, c.cy, c.r * 2, { ...pen, strokeWidth: i ? 1.8 : 2, roughness: .9, seed: ctx.sd() }));
+      const draw = grow(g);
+      // labels sit in the crescent between this circle's top and the next one's (or in the middle of the last)
+      const inner = circles[i + 1], last = !inner;
+      const bandTop = c.cy - c.r, bandBot = last ? c.cy + c.r : inner.cy - inner.r;
+      const vs = (last ? 17 : 22) + (mob ? -3 : 0), ls = fs - (mob ? 1 : .5), lh = ls * 1.25;
+      const blockH = vs + 4 + lh * c.rows.length;
+      const y0 = (bandTop + bandBot) / 2 - blockH / 2 + vs * .8 + (last ? 0 : -3);
+      const lab = el('g', { class: 'lab halo' }, svg);
+      txt(lab, cx, y0, money(c.value), { size: vs, anchor: 'middle', cls: 'ink' });
+      c.rows.forEach((s, j) => txt(lab, cx, y0 + (j + 1) * lh + 4, s, { size: ls, anchor: 'middle', cls: j ? 'mut' : 'ink' }));
+      return { draw, lab, t: S.timing.rings[i] };
+    });
+
+    // the accent ring round the smallest circle
+    const som = circles[circles.length - 1];
+    const ringG = el('g', { class: 'c-accent' }, svg);
+    ringG.appendChild(rc.circle(cx, som.cy, som.r * 2 + 14, { ...pen, strokeWidth: 2.8, roughness: 1.1, seed: ctx.sd() }));
+    const drawRing = grow(ringG);
+
+    // the note, its arrow, and the to-scale circle (true area ratio against the biggest circle)
+    const trueR = R * Math.sqrt(som.value / circles[0].value);
+    const nfs = mob ? 15 : 17, nRows = S.note.map(fill);
+    let note, ar, scaleG, nx, ny;
+    if (!mob) {
+      nx = cx + R + 28; ny = som.cy - 6;
+      note = label(svg, nx, ny, nRows, { size: nfs });
+      ar = arrow(rc, svg, [nx - 8, ny - nfs * .35], [cx + som.r + 14, som.cy - 4], 10, { cls: 'c-accent', w: 2, head: 9, seed: ctx.sd() });
+    } else {
+      nx = cx; ny = bottom + 60;
+      note = label(svg, nx, ny, nRows, { size: nfs, anchor: 'middle' });
+      ar = arrow(rc, svg, [cx - 4, ny - nfs - 2], [cx - 2, bottom + 14], -8, { cls: 'c-accent', w: 2, head: 8, seed: ctx.sd() });
+    }
+    // the scale line: words, then a dashed circle at the true size
+    scaleG = el('g', { class: 'it' }, svg);
+    const sy = ny + (nRows.length - 1) * nfs * 1.25 + (mob ? 30 : 36);
+    const sl = el('g', { class: 'halo' }, scaleG);
+    const st = txt(sl, 0, 0, S.scaleNote, { size: fs, cls: 'mut' });
+    const tw = st.getComputedTextLength ? st.getComputedTextLength() : S.scaleNote.length * fs * .55;
+    const sx = mob ? cx - (tw + 10 + trueR * 2) / 2 : nx;
+    st.setAttribute('x', sx); st.setAttribute('y', sy);
+    const dotG = el('g', { class: 'c-accent' }, scaleG);
+    dotG.appendChild(rc.circle(sx + tw + 10 + trueR, sy - fs * .35, trueR * 2, { ...pen, strokeWidth: 1.6, roughness: .5, strokeLineDash: [3, 3], seed: ctx.sd() }));
+
+    const T = S.timing;
+    return p => {
+      items.forEach(o => { o.draw(seg(p, ...o.t)); show(o.lab, p > o.t[1] - .01); });
+      drawRing(seg(p, ...T.ring));
+      show(note, p > T.note); ar.set(seg(p, T.note - .02, T.note + .03));
+      show(scaleG, p > T.scale);
+    };
+  },
+});
+</script>
+</body>
+</html>

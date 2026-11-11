@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quadrant move · Scroll Sketch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Shantell+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../lib/scroll-sketch.css">
+<!-- optional theme: <link rel="stylesheet" href="../lib/themes/business-design-labs.css"> -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script src="../lib/scroll-sketch.js"></script>
+</head>
+<body>
+<!--
+  TEMPLATE: Quadrant move
+  Use it when: a company (or product, or idea) changed position on two dimensions at once or one
+  after the other, and you want readers to see where it started, where it went, and in what order.
+  Scroll beats: the 2×2 draws → quadrant names appear → items land in their quadrants → a key item
+  moves to a new quadrant, leaving a dotted trail and turning accent (once per move) → a closing
+  note names the move.
+  Edit the STORY block in the script at the bottom. Nothing else needs to change.
+-->
+<main>
+<div class="col">
+  <div class="meta"><b>Example</b> · a well-known business story</div>
+  <h1>Netflix moved twice</h1>
+  <p class="lede">First it changed how it delivers films. Then it changed what it shows. Two moves, years apart, each one into a different quadrant.</p>
+</div>
+
+<section class="scrolly" id="chart" style="--len:460" aria-label="Chart: Netflix's two moves on a 2×2">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="A hand-drawn two-by-two. Across: how it delivers, from physical to digital. Up: what it shows, from licensed to its own. The quadrants are named rental shop (physical, licensed), streaming library (digital, licensed), film studio (physical, own) and streaming studio (digital, own). Blockbuster's stores sit in the rental shop corner, in grey. Netflix starts there too, renting DVDs by mail in 1998. It moves right to streaming in 2007, then up to its own shows with House of Cards in 2013, leaving a dotted trail. A note says it moved twice: first how it delivers, then what it shows."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">Positions are qualitative: where each business sits in a quadrant is a sketch of the idea, not measured data. Dates: Netflix launched DVD rental by mail in 1998, streaming in 2007, and House of Cards in 2013.</p>
+  <p>Write what comes next here.</p>
+</div>
+</main>
+
+<script>
+/* ========== EDIT THE STORY ========== */
+const STORY = {
+  xTitle: 'how it delivers', xEnds: ['physical', 'digital'],
+  yTitle: 'what it shows', yEnds: ['licensed', 'its own'],
+  // quadrant names sit in the outer corners, out of the way of the items: [x, y, anchor], 0..1 on each axis
+  quadrants: [
+    { name: 'rental shop',       at: [.02, .03, 'start'] },   // bottom left
+    { name: 'streaming library', at: [.98, .03, 'end'] },     // bottom right
+    { name: 'film studio',       at: [.02, .955, 'start'] },  // top left
+    { name: 'streaming studio',  at: [.98, .955, 'end'] },    // top right
+  ],
+  // each item has one or more stops (x, y from 0 to 1). With several stops it moves between them;
+  // `moves` says when each move happens. tag: where the name sits next to the dot at that stop
+  // ('above' | 'below' | 'left' | 'right'); side: where the stop's label sits.
+  // ref: true draws a grey reference item that never moves.
+  items: [
+    { name: 'Blockbuster', ref: true, stops: [{ at: [.12, .40], label: ['Blockbuster:', 'stores'], side: 'right' }] },
+    { name: 'Netflix', moves: [[.34, .46], [.56, .68]], stops: [
+      { at: [.32, .22], tag: 'above', label: ['DVDs by mail', '1998'], side: 'below' },
+      { at: [.76, .22], tag: 'above', label: ['streaming', '2007'], side: 'below' },
+      { at: [.76, .74], tag: 'right', label: ['its own shows', 'House of Cards, 2013'], side: 'above' },
+    ] },
+  ],
+  closing: {
+    rows: ['moved twice:', 'first how it delivers,', 'then what it shows'],
+    rowsMob: ['moved twice:', 'how it delivers,', 'then what it shows'],
+    at: [.04, .84],                    // first row, top left quadrant
+    arrow: [[.32, .66], [.725, .725]],  // from, to
+  },
+  steps: [
+    [0,    'Scroll to draw the map.'],
+    [.005, 'Two questions about any film business: how does it reach you, and whose films are they?'],
+    [.09,  'That gives four places to be.'],
+    [.20,  '1998: Netflix rents DVDs by mail. Physical discs of other studios’ films, like Blockbuster’s stores.'],
+    [.34,  '2007: it starts streaming. Same kind of films, a new way to deliver them.'],
+    [.56,  '2013: House of Cards. Now it shows something of its own.'],
+    [.76,  'Netflix moved twice: first how it delivers, then what it shows.'],
+  ],
+  timing: { grid: [0, .07], names: [.09, .15], items: [.18, .21], closing: [.76, .84] },
+};
+
+/* ========== DRAWING (no need to edit) ========== */
+const { scene, el, txt, seg, ease, lerp, show, grow, arrow, label, axes, pen } = Sketch;
+scene('chart', {
+  caps: STORY.steps,
+  build(ctx) {
+    const { svg, W, mob, vh, rc } = ctx, S = STORY, fs = ctx.fs;
+    ctx.size(mob ? Math.min(Math.max(vh - 240, 380), 520) : Math.min(Math.max(Math.min(W * .66, vh - 190), 340), 470));
+    const { X, Y, L } = axes(ctx, { x: S.xTitle, y: S.yTitle, xEnds: S.xEnds });
+    // the two ends of the y axis, written up the axis
+    const yl = el('g', { class: 'axl' }, svg);
+    txt(yl, L - 10, Y(0), S.yEnds[0], { size: fs, cls: 'mut', rot: -90 });
+    txt(yl, L - 10, Y(1), S.yEnds[1], { size: fs, cls: 'mut', rot: -90, anchor: 'end' });
+
+    // the cross that makes the 2×2
+    const cross = el('g', { class: 'c-muted' }, svg);
+    cross.appendChild(rc.line(X(.5), Y(-.02), X(.5), Y(1.02), { ...pen, strokeWidth: 1.4, roughness: 1, seed: ctx.sd() }));
+    cross.appendChild(rc.line(X(-.02), Y(.5), X(1.02), Y(.5), { ...pen, strokeWidth: 1.4, roughness: 1, seed: ctx.sd() }));
+    const drawCross = grow(cross);
+
+    const names = S.quadrants.map(q => label(svg, X(q.at[0]), Y(q.at[1]), q.name, { anchor: q.at[2], size: fs + 1, tone: 'mut' }));
+
+    const lh = fs * 1.25;
+    const place = (x, y, side, n) => side === 'above' ? [x, y - 14 - (n - 1) * lh, 'middle']
+      : side === 'left' ? [x - 13, y + fs * .35 - (n - 1) * lh / 2, 'end']
+      : side === 'right' ? [x + 13, y + fs * .35 - (n - 1) * lh / 2, 'start']
+      : [x, y + 24, 'middle'];
+    const tagAt = { above: [0, -12, 'middle'], below: [0, 24, 'middle'], left: [-11, 5, 'end'], right: [11, 5, 'start'] };
+
+    const trails = el('g', null, svg), ghosts = el('g', null, svg);
+    const items = S.items.map(it => {
+      const pts = it.stops.map(s => [X(s.at[0]), Y(s.at[1])]);
+      const trail = el('path', { class: 'trail', d: '' }, trails);
+      // a hollow mark left behind at each stop the item moves on from
+      const ghost = pts.slice(0, -1).map((q, j) => { const g = el('g', { class: 'it c-hatch' }, ghosts); g.appendChild(rc.circle(q[0], q[1], mob ? 11 : 12, { ...pen, strokeWidth: 1.4, roughness: .6, seed: ctx.sd() })); return g; });
+      const labs = it.stops.map((s, j) => {
+        const [x, y, anchor] = place(pts[j][0], pts[j][1], s.side, s.label.length);
+        return label(svg, x, y, s.label, { anchor, size: fs, tone: it.ref ? 'mut' : 'ink' });
+      });
+      const g = el('g', { class: 'it' }, svg);
+      const dot = el('g', { class: 'dot ' + (it.ref ? 'c-hatch' : 'c-ink') }, g);
+      dot.appendChild(rc.circle(0, 0, mob ? 11 : 12, { ...pen, fill: 'currentColor', fillStyle: 'solid', strokeWidth: 1, roughness: .6, seed: ctx.sd() }));
+      const tags = it.stops.map(s => {
+        if (!s.tag) return null;
+        const [dx, dy, anchor] = tagAt[s.tag], t = el('g', { class: 'halo' }, dot);
+        txt(t, dx, dy, it.name, { size: fs + 2, anchor, cls: 'ink sw' });
+        return t.firstChild;
+      });
+      return { it, pts, trail, ghost, labs, g, dot, tags };
+    });
+
+    const cl = S.closing;
+    const note = label(svg, X(cl.at[0]), Y(cl.at[1]), mob && cl.rowsMob ? cl.rowsMob : cl.rows, { size: mob ? fs : fs + 1 });
+    const ar = arrow(rc, svg, [X(cl.arrow[0][0]), Y(cl.arrow[0][1])], [X(cl.arrow[1][0]), Y(cl.arrow[1][1])], mob ? 10 : 16, { cls: 'c-accent', w: 2.4, head: 11, seed: ctx.sd() });
+
+    const T = S.timing;
+    return p => {
+      drawCross(seg(p, ...T.grid));
+      const nq = Math.round(seg(p, ...T.names) * names.length);
+      names.forEach((n, i) => show(n, i < nq));
+      const shown = Math.round(seg(p, ...T.items) * items.length);
+      items.forEach((o, i) => {
+        const on = i < shown, mv = o.it.moves || [];
+        // t runs from 0 (first stop) to the last stop's index; its fraction is the move in progress
+        let t = 0; mv.forEach(m => { t += ease(seg(p, ...m)); });
+        const j = Math.min(Math.floor(t), o.pts.length - 1), f = t - j, b = o.pts[Math.min(j + 1, o.pts.length - 1)];
+        const pos = [lerp(o.pts[j][0], b[0], f), lerp(o.pts[j][1], b[1], f)];
+        show(o.g, on);
+        o.dot.setAttribute('transform', `translate(${pos[0]} ${pos[1]})`);
+        if (!o.it.ref) { o.dot.classList.toggle('c-accent', t > 0); o.dot.classList.toggle('c-ink', t <= 0); }
+        const near = Math.round(t);
+        o.tags.forEach((tg, k) => tg && tg.classList.toggle('off', k !== near));
+        o.ghost.forEach((g, k) => show(g, on && t > k + .04));
+        o.labs.forEach((lb, k) => {
+          show(lb, on && t > k - .03);
+          if (!o.it.ref) lb.querySelectorAll('text').forEach(x => { x.classList.toggle('mut', t > k + .03); x.classList.toggle('ink', t <= k + .03); });
+        });
+        let d = '';
+        if (t > 0) { for (let k = 0; k <= j; k++) d += (k ? 'L' : 'M') + o.pts[k][0].toFixed(1) + ' ' + o.pts[k][1].toFixed(1); d += 'L' + pos[0].toFixed(1) + ' ' + pos[1].toFixed(1); }
+        o.trail.setAttribute('d', d);
+      });
+      const kc = seg(p, ...T.closing); show(note, kc > 0); ar.set(seg(kc, .3, 1));
+    };
+  },
+});
+</script>
+</body>
+</html>

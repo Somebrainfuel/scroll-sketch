@@ -1,0 +1,10 @@
+{
+  "name": "scroll-sketch",
+  "description": "Hand-drawn, scroll-driven chart stories for newsletters and blogs, with 12 starter templates and GIF export for email.",
+  "version": "1.0.0",
+  "author": { "name": "Gary Fox" },
+  "homepage": "https://github.com/Somebrainfuel/scroll-sketch",
+  "repository": "https://github.com/Somebrainfuel/scroll-sketch",
+  "license": "MIT",
+  "keywords": ["scrollytelling", "charts", "rough.js", "newsletter", "data-visualisation", "gif"]
+}

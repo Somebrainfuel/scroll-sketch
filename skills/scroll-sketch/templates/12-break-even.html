@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Break-even · Scroll Sketch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Shantell+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../lib/scroll-sketch.css">
+<!-- optional theme: <link rel="stylesheet" href="../lib/themes/business-design-labs.css"> -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script src="../lib/scroll-sketch.js"></script>
+</head>
+<body>
+<!--
+  TEMPLATE: Break-even
+  Use it when: you want to show how many sales it takes to cover fixed costs, and what each sale
+  after that is worth.
+  Scroll beats: axes → the fixed-cost line draws → total costs rise from it → revenue rises from
+  zero → the crossing is circled and named → the loss before it fills with grey hatching → the
+  profit after it fills with accent hatching.
+  The break-even point and both axis ranges are worked out from the three numbers in STORY.
+  Edit the STORY block in the script at the bottom. Nothing else needs to change.
+-->
+<main>
+<div class="col">
+  <div class="meta"><b>Example</b> · illustrative numbers</div>
+  <h1>Two thousand units to break even</h1>
+  <p class="lede">A small product business pays £60,000 a year before it sells a thing. Every sale chips away at that. Here is the point where it stops losing money.</p>
+</div>
+
+<section class="scrolly" id="chart" style="--len:440" aria-label="Chart: break-even point">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="A break-even chart with illustrative numbers. Units sold run from 0 to 4,000 along the bottom, pounds up the side. Fixed costs are a flat line at £60,000. Total costs rise from there by £20 a unit. Revenue rises from zero by £50 a unit. The lines cross at 2,000 units and £100,000: the break-even point. The gap before it is shaded as loss, the gap after it as profit."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">Illustrative numbers, not a real business. Break-even units = fixed costs ÷ (price − variable cost per unit).</p>
+  <p>Write what comes next here.</p>
+</div>
+</main>
+
+<script>
+/* ========== EDIT THE STORY ========== */
+const STORY = {
+  fixed: 60000,       // fixed costs (£), paid whatever you sell
+  price: 50,          // what each unit sells for (£)
+  variable: 20,       // what each unit costs to make (£)
+  range: 2,           // the units axis runs from 0 to this many times the break-even point
+  xTitle: 'units sold a year', yTitle: '£ a year',
+  names: {
+    fixed: 'fixed costs {fixed}', cost: ['total costs', '+ {variable} a unit'], revenue: ['revenue', '{price} a unit'],
+    even: ['break-even', '{be} units'], loss: 'loss', profit: 'profit',
+  },
+  // captions. {fixed}, {price}, {variable}, {be} (break-even units) and {margin} (price − variable) are filled in
+  steps: [
+    [0,    'Scroll to draw the costs.'],
+    [.005, 'Fixed costs come first: {fixed} a year, whether you sell anything or not.'],
+    [.18,  'Each unit you make adds {variable} of cost on top.'],
+    [.38,  'Each unit you sell brings in {price}.'],
+    [.58,  'Where the lines cross, you break even: {fixed} ÷ ({price} − {variable}) = {be} units.'],
+    [.69,  'Before that, every sale still leaves you short.'],
+    [.78,  'After it, each extra unit adds {margin} of profit.'],
+  ],
+  timing: { fixed: [.02, .12], cost: [.20, .31], revenue: [.40, .51], even: [.60, .64], loss: .71, profit: [.80, .87] },
+};
+
+/* ========== DRAWING (no need to edit) ========== */
+const { scene, el, txt, seg, show, grow, reveal, label, axes, fmt, pen } = Sketch;
+const S0 = STORY, BE = S0.fixed / (S0.price - S0.variable);
+const gbp = v => '£' + fmt(v);
+const TOKENS = { fixed: gbp(S0.fixed), price: gbp(S0.price), variable: gbp(S0.variable), be: fmt(BE), margin: gbp(S0.price - S0.variable) };
+const fill = s => s.replace(/\{(\w+)\}/g, (m, k) => TOKENS[k] ?? m);
+
+scene('chart', {
+  caps: STORY.steps.map(([p, t]) => [p, fill(t)]),
+  build(ctx) {
+    const { svg, W, mob, vh, rc } = ctx, S = STORY, N = S.names, fs = ctx.fs;
+    ctx.size(mob ? Math.min(Math.max(vh - 240, 380), 540) : Math.min(Math.max(Math.min(W * .62, vh - 190), 340), 470));
+    const H = ctx.H, xMax = BE * S.range;
+    const cost = u => S.fixed + S.variable * u, rev = u => S.price * u;
+    const yMax = Math.max(cost(xMax), rev(xMax)) * 1.04;
+    // shaded areas go first so lines and axes draw over them
+    const lossG = el('g', { class: 'it c-hatch' }, svg), profG = el('g', { class: 'c-accent' }, svg);
+    const ax = axes(ctx, { x: S.xTitle, y: S.yTitle, xEnds: ['0', fmt(xMax)] });
+    const X = u => ax.X(u / xMax), Y = v => ax.Y(v / yMax), B = ax.B;
+    const hatch = { stroke: 'none', fill: 'currentColor', fillStyle: 'hachure', hachureGap: mob ? 6 : 7, fillWeight: 1.1 };
+    lossG.appendChild(rc.polygon([[X(0), Y(cost(0))], [X(BE), Y(cost(BE))], [X(0), Y(0)]], { ...hatch, hachureAngle: -41, seed: ctx.sd() }));
+    profG.appendChild(rc.polygon([[X(BE), Y(rev(BE))], [X(xMax), Y(rev(xMax))], [X(xMax), Y(cost(xMax))]], { ...hatch, hachureAngle: 41, seed: ctx.sd() }));
+    const openProfit = reveal(ctx, profG, { from: X(BE) - 2, to: X(xMax) + 4 });
+
+    const line = (a, b, cls, o) => { const g = el('g', { class: cls }, svg); g.appendChild(rc.line(X(a[0]), Y(a[1]), X(b[0]), Y(b[1]), { ...pen, roughness: .9, seed: ctx.sd(), ...o })); return g; };
+    const fixedG = line([0, S.fixed], [xMax, S.fixed], 'c-alt', { strokeWidth: 1.8, strokeLineDash: [7, 6] });
+    const costG = line([0, cost(0)], [xMax, cost(xMax)], 'c-alt', { strokeWidth: 2.6 });
+    const revG = line([0, 0], [xMax, rev(xMax)], 'c-ink', { strokeWidth: 2.6 });
+    const drawFixed = reveal(ctx, fixedG), drawCost = reveal(ctx, costG), drawRev = reveal(ctx, revG);
+
+    // labels. Widths are estimated so text can sit just clear of the sloping lines.
+    const lfs = fs, wOf = s => s.length * lfs * .56, lh = lfs * 1.25, xr = X(xMax) - 2;
+    const uAt = px => (px - X(0)) / (X(xMax) - X(0)) * xMax;           // px back to units
+    const fixedLab = label(svg, xr, Y(S.fixed) + 20, fill(N.fixed), { anchor: 'end', size: lfs, tone: 'mut' });
+    const cRows = N.cost.map(fill), cLeft = uAt(xr - Math.max(...cRows.map(wOf)));
+    const costLab = label(svg, xr, Y(cost(cLeft)) + 20, cRows, { anchor: 'end', size: lfs, tone: 'ink' });
+    // revenue label: its last row ends 12px left of the line at the same height (the line only moves right above it)
+    const rRows = N.revenue.map(fill), ru = xMax * .72;
+    const revLab = label(svg, X(ru) - 12, Y(rev(ru)) - (rRows.length - 1) * lh, rRows, { anchor: 'end', size: lfs });
+
+    // the crossing
+    const ex = X(BE), ey = Y(rev(BE));
+    const evenG = el('g', { class: 'c-accent' }, svg);
+    evenG.appendChild(rc.circle(ex, ey, mob ? 22 : 26, { ...pen, strokeWidth: 2.6, roughness: 1, seed: ctx.sd() }));
+    const drawEven = grow(evenG);
+    const evenDot = el('g', { class: 'it c-ink' }, svg);
+    evenDot.appendChild(rc.circle(ex, ey, 7, { ...pen, fill: 'currentColor', fillStyle: 'solid', strokeWidth: 1, roughness: .4, seed: ctx.sd() }));
+    const eRows = N.even.map(fill), evenLab = label(svg, ex - 16, ey - 16 - lh, eRows, { anchor: 'end', size: lfs + 1 });
+    const drop = el('g', { class: 'it' }, svg);
+    el('line', { class: 'lead', x1: ex, y1: ey + 14, x2: ex, y2: H - B - 2 }, drop);
+    txt(drop, ex, H - B + 20, fmt(BE), { size: fs, anchor: 'middle', cls: 'ink' });
+
+    // area names, set inside each shaded triangle
+    const lu = BE * .2, lossLab = label(svg, X(lu), (Y(rev(lu)) + Y(S.fixed)) / 2 + lfs * .4, N.loss, { anchor: 'middle', size: lfs + 1, tone: 'mut' });
+    const pu = BE + (xMax - BE) * .8, profLab = label(svg, X(pu), (Y(rev(pu)) + Y(cost(pu))) / 2 + lfs * .4, N.profit, { anchor: 'middle', size: lfs + 3 });
+
+    const T = S.timing;
+    return p => {
+      drawFixed(seg(p, ...T.fixed)); show(fixedLab, p > T.fixed[1] - .01);
+      drawCost(seg(p, ...T.cost)); show(costLab, p > T.cost[1] - .01);
+      drawRev(seg(p, ...T.revenue)); show(revLab, p > T.revenue[1] - .01);
+      const ke = seg(p, ...T.even); drawEven(ke); show(evenDot, ke > 0); show(evenLab, ke > .6); show(drop, ke > .6);
+      show(lossG, p > T.loss); show(lossLab, p > T.loss + .01);
+      const kp = seg(p, ...T.profit); openProfit(kp); show(profLab, kp > .8);
+    };
+  },
+});
+</script>
+</body>
+</html>

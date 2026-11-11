@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Timeline · Scroll Sketch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Shantell+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../lib/scroll-sketch.css">
+<!-- optional theme: <link rel="stylesheet" href="../lib/themes/business-design-labs.css"> -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script src="../lib/scroll-sketch.js"></script>
+</head>
+<body>
+<!--
+  TEMPLATE: Timeline
+  Use it when: the order and spacing of events is the story (a slow start, then a burst).
+  Scroll beats: a hand-drawn line draws itself → milestones drop in one by one (dot, year, short
+  label; alternating above and below, stacked higher when they would touch) → a bracket marks a
+  phase and a handwritten note names it.
+  On wide screens the line runs left to right, to scale in years. On phones it runs top to bottom
+  and events that are close together get a minimum gap so their labels never overlap.
+  Edit the STORY block in the script at the bottom. Nothing else needs to change.
+-->
+<main>
+<div class="col">
+  <div class="meta"><b>Example</b> · public company history</div>
+  <h1>Amazon, beyond books</h1>
+  <p class="lede">For its first decade Amazon was a shop. Then, in three years, it started three businesses that had little to do with selling books.</p>
+</div>
+
+<section class="scrolly" id="chart" style="--len:440" aria-label="Chart: a timeline of Amazon from 1994 to 2007">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="A timeline from 1994 to 2007. 1994: Jeff Bezos founds Amazon. 1995: Amazon.com opens, selling books. Then a ten-year gap. 2005: Amazon Prime launches. 2006: Amazon Web Services launches. 2007: Kindle launches. A bracket over 2005 to 2007 reads: three new businesses in three years."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">Dates are from Amazon’s public company history. On narrow screens, events a year apart are spaced out so their labels fit.</p>
+  <p>Write what comes next here.</p>
+</div>
+</main>
+
+<script>
+/* ========== EDIT THE STORY ========== */
+const STORY = {
+  // each milestone: the year (or any number on the same scale), one to three short lines, and when it drops in (0..1)
+  milestones: [
+    { year: 1994, text: ['Jeff Bezos', 'founds Amazon'], at: .12 },
+    { year: 1995, text: ['Amazon.com opens,', 'selling books'], at: .21 },
+    { year: 2005, text: ['Amazon Prime', 'launches'], at: .32 },
+    { year: 2006, text: ['Amazon Web', 'Services launches'], at: .42 },
+    { year: 2007, text: ['Kindle', 'launches'], at: .52 },
+  ],
+  // the phase to mark: from one milestone's year to another's. noteMob: the same words in shorter lines for phones
+  bracket: { from: 2005, to: 2007, note: ['three new businesses', 'in three years'], noteMob: ['three new', 'businesses', 'in three', 'years'] },
+  steps: [
+    [0,    'Scroll to draw the timeline.'],
+    [.12,  '1994: Jeff Bezos founds Amazon.'],
+    [.21,  '1995: Amazon.com opens, selling books. Then, for ten years, it is mostly a shop.'],
+    [.32,  '2005: Amazon Prime launches.'],
+    [.42,  '2006: Amazon Web Services launches.'],
+    [.52,  '2007: the Kindle launches.'],
+    [.66,  'Three new businesses in three years, none of them a bookshop.'],
+  ],
+  timing: { line: [0, .10], drop: .07, bracket: [.66, .78] },   // drop: how long each milestone takes to land
+};
+
+/* ========== DRAWING (no need to edit) ========== */
+const { scene, el, txt, seg, ease, show, grow, label, pen } = Sketch;
+scene('chart', {
+  caps: STORY.steps,
+  build(ctx) {
+    const { svg, W, mob, vh, rc } = ctx, S = STORY, fs = ctx.fs;
+    const M = S.milestones.slice().sort((a, b) => a.year - b.year);
+    const ySize = fs + 4, lh = fs * 1.25, side = mob ? 0 : 1;
+
+    // spread positions between a and b by time, but never closer than gap (px)
+    const spread = (a, b, gap) => {
+      const n = M.length - 1, d = M.slice(1).map((m, i) => m.year - M[i].year);
+      if (n < 1) return [(a + b) / 2];
+      const len = b - a, fixed = new Set();
+      let c = 0;
+      for (let k = 0; k <= n; k++) {
+        const free = d.reduce((s, g, i) => s + (fixed.has(i) ? 0 : g), 0);
+        c = free > 0 ? (len - fixed.size * gap) / free : 0;
+        const add = d.findIndex((g, i) => !fixed.has(i) && c * g < gap);
+        if (add < 0) break; fixed.add(add);
+      }
+      const step = fixed.size === n ? len / n : null, out = [a];
+      d.forEach((g, i) => out.push(out[i] + (step ?? (fixed.has(i) ? gap : c * g))));
+      return out;
+    };
+
+    // build each milestone's label block first, so it can be measured
+    const blocks = M.map(m => {
+      const g = el('g', { class: 'lab halo' }, svg);
+      const inner = el('g', null, g);
+      txt(inner, 0, ySize, String(m.year), { size: ySize, cls: 'ink' });
+      [].concat(m.text).forEach((s, j) => txt(inner, 0, ySize + 4 + (j + 1) * lh - 2, s, { size: fs, cls: 'mut' }));
+      let w = 120; try { w = inner.getBBox().width; } catch (e) {}
+      return { m, g, inner, w, h: ySize + 6 + [].concat(m.text).length * lh };
+    });
+    const blockH = Math.max(...blocks.map(b => b.h));
+
+    const lineG = el('g', { class: 'c-ink' }, svg), headG = el('g', { class: 'head c-ink' }, svg);
+    const stems = el('g', null, svg), dots = el('g', null, svg);
+    svg.insertBefore(stems, lineG); svg.appendChild(dots);
+    const sw = { ...pen, strokeWidth: 2, roughness: .9 };
+    let pos = [], place = [], drawBracket, br = el('g', { class: 'c-accent' }, svg), note;
+    const B = S.bracket, at = y => { const i = M.findIndex(m => m.year === y); return i >= 0 ? i : 0; };
+
+    if (!mob) {
+      // horizontal: alternate above / below; a label that would touch its neighbour moves up a level
+      const X0 = 16, X1 = W - 16;
+      pos = spread(X0 + 44, X1 - 70, 28);
+      const levels = [[], []], lvl = blocks.map((b, i) => {
+        const s = i % 2, x = Math.min(pos[i] - 3, W - 4 - b.w);
+        let l = 0; while ((levels[s][l] ?? -1e9) > x - 16) l++;
+        levels[s][l] = x + b.w; b.x = x; b.s = s; return l;
+      });
+      // a higher label's stem passes through the lower levels: slide a lower label left so the stem misses it
+      blocks.forEach((b, i) => blocks.forEach((c, j) => {
+        if (j <= i || c.s !== b.s || lvl[j] <= lvl[i]) return;
+        if (pos[j] > b.x - 8 && pos[j] < b.x + b.w + 8) {
+          const prev = blocks.filter((d, k) => k < i && d.s === b.s && lvl[k] === lvl[i]).pop();
+          const nx = pos[j] - 12 - b.w;
+          if (nx >= 4 && (!prev || nx > prev.x + prev.w + 16)) b.x = nx;
+        }
+      }));
+      const levelH = blockH + 12, s0 = 24;
+      const nUp = Math.max(0, ...lvl.filter((l, i) => i % 2 === 0).map(l => l + 1));
+      const nDn = Math.max(0, ...lvl.filter((l, i) => i % 2 === 1).map(l => l + 1));
+      const lineY = 8 + (nUp ? s0 + (nUp - 1) * levelH + blockH : 10);
+      const brY = lineY + (nDn ? s0 + (nDn - 1) * levelH + blockH : 0) + 22;
+      ctx.size(brY + 16 + [].concat(B.note).length * (fs + 3) * 1.25 + 14);
+      lineG.appendChild(rc.line(X0, lineY, X1, lineY, { ...sw, seed: ctx.sd() }));
+      headG.appendChild(rc.linearPath([[X1 - 10, lineY - 6], [X1, lineY], [X1 - 10, lineY + 6]], { ...sw, roughness: .5, seed: ctx.sd() }));
+      place = blocks.map((b, i) => {
+        const up = b.s === 0, stem = s0 + lvl[i] * levelH;
+        const top = up ? lineY - stem - blockH + (blockH - b.h) : lineY + stem;
+        b.inner.setAttribute('transform', `translate(${b.x} ${top})`);
+        return { x: pos[i], y: lineY, sx: pos[i], sy: up ? top + b.h : top, dir: up ? -1 : 1 };
+      });
+      const xa = pos[at(B.from)], xb = pos[at(B.to)], xm = (xa + xb) / 2;
+      br.appendChild(rc.linearPath([[xa, brY - 9], [xa, brY], [xb, brY], [xb, brY - 9]], { ...pen, strokeWidth: 2.2, roughness: .7, seed: ctx.sd() }));
+      br.appendChild(rc.line(xm, brY, xm, brY + 7, { ...pen, strokeWidth: 2.2, roughness: .5, seed: ctx.sd() }));
+      const nw = Math.min(Math.max(xm, 130), W - 130);
+      note = label(svg, nw, brY + 16 + fs + 3, B.note, { anchor: 'middle', size: fs + 3 });
+    } else {
+      // vertical: time runs down; labels sit to the right of the line, the bracket and note to the left
+      const xL = Math.round(W * .33), H = Math.min(Math.max(vh - 250, 430), 600);
+      ctx.size(H);
+      const Y0 = 14, Y1 = H - 10;
+      pos = spread(Y0 + 16, Y1 - blockH - 6, blockH + 10);
+      lineG.appendChild(rc.line(xL, Y0, xL, Y1, { ...sw, seed: ctx.sd() }));
+      headG.appendChild(rc.linearPath([[xL - 6, Y1 - 10], [xL, Y1], [xL + 6, Y1 - 10]], { ...sw, roughness: .5, seed: ctx.sd() }));
+      place = blocks.map((b, i) => {
+        b.inner.setAttribute('transform', `translate(${xL + 18} ${pos[i] - ySize * .72})`);
+        return { x: xL, y: pos[i], sx: xL + 14, sy: pos[i], dir: 0 };
+      });
+      const ya = pos[at(B.from)], yb = pos[at(B.to)], ym = (ya + yb) / 2, xb = xL - 18;
+      br.appendChild(rc.linearPath([[xb + 8, ya], [xb, ya], [xb, yb], [xb + 8, yb]], { ...pen, strokeWidth: 2.2, roughness: .7, seed: ctx.sd() }));
+      br.appendChild(rc.line(xb, ym, xb - 7, ym, { ...pen, strokeWidth: 2.2, roughness: .5, seed: ctx.sd() }));
+      const rows = B.noteMob || B.note, nlh = fs * 1.25;
+      note = label(svg, xb - 12, ym - (rows.length - 1) * nlh / 2 + fs * .35, rows, { anchor: 'end', size: fs });
+    }
+    drawBracket = grow(br);
+    const drawLine = grow(lineG);
+
+    // dots and stems (stems are dotted leader lines from the dot to the label)
+    const items = blocks.map((b, i) => {
+      const P = place[i];
+      const dot = el('g', { class: 'dot it c-ink' }, dots);
+      dot.appendChild(rc.circle(P.x, P.y, mob ? 11 : 12, { ...pen, fill: 'currentColor', fillStyle: 'solid', strokeWidth: 1, roughness: .6, seed: ctx.sd() }));
+      const stem = el('line', { class: 'lead', x1: P.x, y1: P.y, x2: P.sx, y2: P.sy }, stems);
+      const inPhase = b.m.year >= B.from && b.m.year <= B.to;
+      return { b, P, dot, stem, inPhase };
+    });
+
+    const T = S.timing;
+    return p => {
+      const kl = seg(p, ...T.line); drawLine(kl); show(headG, kl > .97);
+      const kb = seg(p, ...T.bracket);
+      items.forEach(o => {
+        const k = ease(seg(p, o.b.m.at, o.b.m.at + T.drop));
+        show(o.dot, k > 0); show(o.b.g, k > .15);
+        // the label drops in towards the line (or slides in from the right on phones)
+        const off = (1 - k) * 14;
+        o.b.g.setAttribute('transform', o.P.dir ? `translate(0 ${o.P.dir * off})` : `translate(${off} 0)`);
+        o.stem.style.opacity = k > .3 ? 1 : 0;
+        const hot = o.inPhase && kb > .3;
+        o.dot.classList.toggle('c-accent', hot); o.dot.classList.toggle('c-ink', !hot);
+      });
+      drawBracket(kb); show(note, kb > .8);
+    };
+  },
+});
+</script>
+</body>
+</html>

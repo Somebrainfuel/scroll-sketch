@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Before / after bars · Scroll Sketch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Shantell+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../lib/scroll-sketch.css">
+<!-- optional theme: <link rel="stylesheet" href="../lib/themes/business-design-labs.css"> -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script src="../lib/scroll-sketch.js"></script>
+</head>
+<body>
+<!--
+  TEMPLATE: Before / after bars
+  Use it when: one number changed a lot and you want readers to feel the size of the change.
+  Scroll beats: a baseline draws → hatched bars grow one by one → the "after" bar collapses
+  (or jumps) to its new value while its label swaps → an arrow between the bar tops names the difference.
+  Works for 2–4 bars. Bars are drawn to scale; a tiny bar keeps a small stub so it never vanishes.
+  Edit the STORY block in the script at the bottom. Nothing else needs to change.
+-->
+<main>
+<div class="col">
+  <div class="meta"><b>Example</b> · from New Combinations, Issue 1</div>
+  <h1>Seven weeks, or seven hours</h1>
+  <p class="lede">Swedish startup 120ft builds small factories run by humanoid robots. Its pitch rests on one number: how long it takes to teach a robot something new.</p>
+</div>
+
+<section class="scrolly" id="chart" style="--len:420" aria-label="Chart: time to teach a robot a new skill, before and now">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="Two bars drawn to scale in hours. Before: 7 weeks, or 1,176 hours, to teach one of 120ft's robots a new assembly skill. Now, by the company's account: 7 hours, a sliver of a bar. An arrow between the bar tops reads 168 times faster."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">The 7 hours and 7 weeks are 120ft’s own figures, reported by <a href="https://siliconangle.com/2026/10/15/120ft-raises-angel-funding-to-build-autonomous-microfactories-run-by-humanoid-robots/">SiliconANGLE</a> (15 October 2026). Bars are to scale in calendar hours (7 weeks = 1,176 hours).</p>
+  <p>Write what comes next here.</p>
+</div>
+</main>
+
+<script>
+/* ========== EDIT THE STORY ========== */
+const STORY = {
+  title: 'time to teach a robot one new assembly skill, in hours, to scale',
+  titleMob: 'time to teach a robot a new skill, in hours, to scale',   // shorter, for phones
+  // 2–4 bars, left to right. value: the bar's height in one shared unit (here hours).
+  // label / sub: the words above the bar. name: the words under it.
+  // Optional was / wasLabel / wasSub: the bar first grows to `was`, then collapses or jumps to `value`.
+  bars: [
+    { name: ['before'], value: 1176, label: '7 weeks', sub: '1,176 hours' },
+    { name: ['now'], was: 1176, wasLabel: '7 weeks?', wasSub: '', value: 7, label: '7 hours', sub: '' },
+  ],
+  // the arrow between two bar tops. {ratio} becomes the bigger value ÷ the smaller one, rounded.
+  diff: { from: 0, to: 1, text: '{ratio}× faster', sub: 'by 120ft’s account' },
+  stub: 5,                      // the smallest bar height in px, so a tiny value stays visible
+  steps: [
+    [0,    'Scroll to grow the bars.'],
+    [.06,  'Teaching one of 120ft’s robots a new assembly skill used to take 7 weeks: 1,176 hours on the clock.'],
+    [.22,  'Teach it the next skill the same way and you’d wait another 7 weeks.'],
+    [.42,  '120ft says it now takes 7 hours. Drawn to scale, the bar nearly disappears.'],
+    [.66,  'That’s 168 times faster, as the company tells it.'],
+  ],
+  // grow: one [start, end] window per bar, in order (add one when you add a bar). change: when bars with `was`
+  // move to `value`; put it after those bars have grown. Leave ~10% at the end for the finished chart.
+  timing: { base: [0, .05], grow: [[.06, .18], [.22, .34]], change: [.42, .56], diff: [.66, .80] },
+};
+
+/* ========== DRAWING (no need to edit) ========== */
+const { scene, el, txt, seg, ease, show, grow, arrow, label, pen } = Sketch;
+scene('chart', {
+  caps: STORY.steps,
+  build(ctx) {
+    const { svg, W, mob, vh, rc } = ctx, S = STORY, fs = ctx.fs, n = S.bars.length;
+    ctx.size(mob ? Math.min(Math.max(vh - 250, 360), 500) : Math.min(Math.max(Math.min(W * .62, vh - 190), 330), 470));
+    const H = ctx.H, defs = el('defs', null, svg);
+    const nameRows = Math.max(...S.bars.map(b => [].concat(b.name).length));
+    const lh = fs * 1.25, big = mob ? 18 : 22;
+    const yB = H - 30 - nameRows * lh - (mob ? 16 : 20);   // baseline
+    const top = 50;                                          // room for the tallest bar's label
+    const maxV = Math.max(...S.bars.map(b => Math.max(b.value, b.was ?? 0)));
+    const hOf = v => Math.max(S.stub, v / maxV * (yB - top));
+    const x0 = W * (mob ? .06 : .1), x1 = W * (mob ? .94 : .9), slot = (x1 - x0) / n;
+    const bw = Math.min(mob ? 84 : 130, slot * .55);
+
+    // baseline and title
+    const baseG = el('g', { class: 'c-ink' }, svg);
+    baseG.appendChild(rc.line(W * .03, yB, W * .97, yB, { ...pen, strokeWidth: 1.8, roughness: 1, seed: ctx.sd() }));
+    const drawBase = grow(baseG);
+    const titleG = el('g', { class: 'it' }, svg);
+    txt(titleG, W / 2, H - 10, mob && S.titleMob ? S.titleMob : S.title, { anchor: 'middle', size: mob ? fs - 1 : fs, cls: 'mut' });
+
+    let clipN = 0;
+    const bars = S.bars.map((b, i) => {
+      const cx = x0 + slot * (i + .5), x = cx - bw / 2;
+      const hMax = hOf(Math.max(b.value, b.was ?? 0));
+      const g = el('g', { class: 'c-ink' }, svg);
+      // the body is drawn once at full height and shown through a clip that moves with the bar top
+      const id = 'bar04-' + (++clipN);
+      const clipR = el('rect', { x: x - 3, y: yB, width: bw + 6, height: 0 }, el('clipPath', { id }, defs));
+      const body = el('g', { 'clip-path': `url(#${id})` }, g);
+      const hatch = el('g', { class: 'c-hatch' }, body);
+      hatch.appendChild(rc.rectangle(x, yB - hMax, bw, hMax, { stroke: 'none', fill: 'currentColor', fillStyle: 'hachure', hachureGap: mob ? 6 : 7, hachureAngle: -41, fillWeight: 1, seed: ctx.sd() }));
+      const sides = el('g', null, body);
+      sides.appendChild(rc.line(x, yB, x, yB - hMax, { ...pen, strokeWidth: 1.8, roughness: .8, seed: ctx.sd() }));
+      sides.appendChild(rc.line(x + bw, yB, x + bw, yB - hMax, { ...pen, strokeWidth: 1.8, roughness: .8, seed: ctx.sd() }));
+      const lid = el('g', null, g);
+      lid.appendChild(rc.line(x - 2, 0, x + bw + 2, 0, { ...pen, strokeWidth: 1.8, roughness: .6, seed: ctx.sd() }));
+      // words above the bar: the "was" pair, then the final pair (swapped with .sw/.off)
+      const lab = el('g', { class: 'lab halo' }, svg);
+      const pair = (l, s, off) => {
+        const c = off ? ' sw off' : ' sw';
+        return [txt(lab, cx, s ? -lh - 4 : -2, l, { anchor: 'middle', size: big, cls: 'ink' + c }), s ? txt(lab, cx, -2, s, { anchor: 'middle', size: fs, cls: 'mut' + c }) : null].filter(Boolean);
+      };
+      const hasWas = b.was != null;
+      const wasT = hasWas ? pair(b.wasLabel ?? '', b.wasSub, false) : [];
+      const nowT = pair(b.label, b.sub, hasWas);
+      const name = label(svg, cx, yB + 22, b.name, { anchor: 'middle', size: fs + 1 });
+      return { b, cx, x, g, clipR, lid, lab, wasT, nowT, name, hasWas, hFrom: hOf(hasWas ? b.was : b.value), hTo: hOf(b.value), labH: (b.sub ? lh + 4 : 0) + big };
+    });
+
+    // the difference: an arrow from one bar top to the other, with a big handwritten note
+    const D = S.diff, A = bars[D.from], B = bars[D.to];
+    const va = A.b.value, vb = B.b.value, ratio = Math.round(Math.max(va, vb) / Math.max(1e-9, Math.min(va, vb)));
+    const aTop = yB - A.hTo, bTop = yB - B.hTo - B.labH - 12;
+    const right = B.cx > A.cx ? 1 : -1;
+    const pa = [A.cx + right * (bw / 2 + (mob ? 16 : 12)), aTop + 10], pb = [B.cx - right * (bw * .18 + 8), bTop - 8];
+    const ar = arrow(rc, svg, pa, pb, right * (mob ? 12 : 34), { cls: 'c-accent', w: 2.6, head: 12, seed: ctx.sd() });
+    const dSize = mob ? 21 : 27;
+    const tx = Math.min(W - 8, Math.max(8, B.cx + right * (mob ? 4 : 10))), ty = (aTop + bTop) / 2 - (mob ? 6 : 0);
+    const dLab = label(svg, tx, ty, [D.text.replace('{ratio}', ratio.toLocaleString('en-GB'))], { anchor: 'middle', size: dSize });
+    const dSub = label(svg, tx, ty + dSize * .95, D.sub, { anchor: 'middle', size: fs, tone: 'mut' });
+
+    const T = S.timing;
+    return p => {
+      const kb = seg(p, ...T.base);
+      drawBase(kb); show(titleG, kb > .5);
+      const kc = ease(seg(p, ...T.change));
+      bars.forEach((o, i) => {
+        const kg = ease(seg(p, ...(T.grow[i] || T.grow[T.grow.length - 1])));
+        const h = kg * (o.hasWas ? o.hFrom + (o.hTo - o.hFrom) * kc : o.hFrom);
+        o.clipR.setAttribute('y', yB - h - 2); o.clipR.setAttribute('height', h > 0 ? h + 4 : 0);
+        o.lid.setAttribute('transform', `translate(0 ${yB - h})`);
+        o.lid.style.opacity = kg > 0 ? 1 : 0;
+        o.lab.setAttribute('transform', `translate(0 ${yB - h - 10})`);
+        show(o.lab, kg > .9); show(o.name, kg > 0);
+        const after = !o.hasWas || kc > .5;
+        o.wasT.forEach(t => t.classList.toggle('off', after)); if (o.hasWas) o.nowT.forEach(t => t.classList.toggle('off', !after));
+        const changed = o.hasWas && kc > .5;
+        o.g.classList.toggle('c-accent', changed); o.g.classList.toggle('c-ink', !changed);
+      });
+      const kd = seg(p, ...T.diff); ar.set(kd); show(dLab, kd > .6); show(dSub, kd > .8);
+    };
+  },
+});
+</script>
+</body>
+</html>

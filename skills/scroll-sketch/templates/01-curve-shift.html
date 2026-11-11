@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Curve shift · Scroll Sketch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Shantell+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../lib/scroll-sketch.css">
+<!-- optional theme: <link rel="stylesheet" href="../lib/themes/business-design-labs.css"> -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script src="../lib/scroll-sketch.js"></script>
+</head>
+<body>
+<!--
+  TEMPLATE: Curve shift
+  Use it when: something moves a decision, price or product to a better place on a known curve.
+  Scroll beats: curve draws → items appear on the curve → a region is marked → each item slides
+  along the curve to its new spot (label swaps) → a closing arrow names the move.
+  Edit the STORY block in the script at the bottom. Nothing else needs to change.
+-->
+<main>
+<div class="col">
+  <div class="meta"><b>Example</b> · from New Combinations, Issue 1</div>
+  <h1>Big yeses, made small</h1>
+  <p class="lede">When a decision feels big, customers rarely say no. They just don't decide. Three businesses are making the first yes smaller.</p>
+</div>
+
+<section class="scrolly" id="chart" style="--len:440" aria-label="Chart: the big-yes curve">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="A falling curve: the bigger the first yes, the fewer people say yes now. The area under the right-hand end is shaded 'not yet'. Three decisions start on the right and slide up the curve as IKEA, 120ft and Holo make the first yes smaller."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">The curve is a sketch of the idea, not measured data.</p>
+  <p>Write what comes next here.</p>
+</div>
+</main>
+
+<script>
+/* ========== EDIT THE STORY ========== */
+const STORY = {
+  xTitle: 'size of the first yes', xEnds: ['small', 'big'],
+  yTitle: 'how many say yes now',
+  curve: x => .04 + .92 * Math.exp(-2.6 * x),   // y for each x, both 0..1
+  region: { from: .55, label: 'not yet' },        // hatched area under the curve, from this x to the right
+  closing: { from: .52, to: .07, label: 'a smaller yes' },
+  // each item: where it starts (x0) and ends (x1) on the curve, labels before and after, and when it moves
+  items: [
+    { before: ['a shopper', 'buys it new'], after: ['IKEA', '≈ 60% less, second-hand'], x0: .68, x1: .43, move: [.36, .50] },
+    { before: ['a small brand', 'commits to 5,000 units'], after: ['120ft', 'pays per finished product'], x0: .92, x1: .30, move: [.54, .68] },
+    { before: ['a small business', 'hires for marketing'], after: ['Holo', '≈ $21 a month, on average'], x0: .80, x1: .14, move: [.72, .86] },
+  ],
+  steps: [
+    [0,    'Scroll to draw the curve.'],
+    [.005, 'The bigger the first yes, the fewer people say it now.'],
+    [.12,  'Three big first yeses: buying new, committing to 5,000 units, hiring for marketing.'],
+    [.26,  'Out on the right, people rarely say no. They just don’t decide yet.'],
+    [.36,  'IKEA: second-hand IKEA furniture costs around 60% less than new.'],
+    [.54,  '120ft: brands would pay for each finished product instead of a factory run.'],
+    [.72,  'Holo: AI marketing for about $21 a month per business, on average.'],
+    [.88,  'Each one makes the first yes smaller, so more people can say it.'],
+  ],
+  timing: { curve: [0, .10], items: [.12, .24], region: .26, closing: [.88, .97] },
+};
+
+/* ========== DRAWING (no need to edit) ========== */
+const { scene, el, txt, seg, ease, show, reveal, arrow, label, axes, pen } = Sketch;
+scene('chart', {
+  caps: STORY.steps,
+  build(ctx) {
+    const { svg, W, mob, vh, rc } = ctx, S = STORY, f = S.curve;
+    ctx.size(mob ? Math.min(Math.max(vh - 240, 360), 520) : Math.min(Math.max(Math.min(W * .66, vh - 190), 320), 470));
+    // the hatched region goes first so the axes draw over it
+    const regG = el('g', { class: 'it c-hatch' }, svg);
+    const { X, Y } = axes(ctx, { x: S.xTitle, y: S.yTitle, xEnds: S.xEnds });
+    const rp = [[X(S.region.from), Y(0)]];
+    for (let x = S.region.from; x <= 1.0001; x += .05) rp.push([X(x), Y(f(x))]);
+    rp.push([X(1), Y(0)]);
+    regG.appendChild(rc.polygon(rp, { stroke: 'none', fill: 'currentColor', fillStyle: 'hachure', hachureGap: mob ? 6 : 7, hachureAngle: -41, fillWeight: 1, seed: ctx.sd() }));
+    svg.insertBefore(regG, svg.firstChild);
+    const regLab = label(svg, X((S.region.from + 1) / 2), Y(.06), S.region.label, { anchor: 'middle', size: mob ? 15 : 17, tone: 'mut' });
+
+    const curveG = el('g', { class: 'c-ink' }, svg);
+    const pts = []; for (let i = 0; i <= 24; i++) pts.push([X(i / 24), Y(f(i / 24))]);
+    curveG.appendChild(rc.curve(pts, { ...pen, strokeWidth: 2.4, roughness: .7, seed: ctx.sd() }));
+    const drawCurve = reveal(ctx, curveG);
+
+    const cl = S.closing;
+    const ar = arrow(rc, svg, [X(cl.from), Y(.075)], [X(cl.to), Y(.075)], -10, { cls: 'c-accent', w: 2.6, head: 12, seed: ctx.sd() });
+    const arLab = label(svg, X((cl.from + cl.to) / 2), Y(.075) - 14, cl.label, { anchor: 'middle', size: mob ? 15 : 17 });
+
+    // items park their labels top right; the rightmost gets the top row so leader lines don't cross
+    const order = S.items.map((it, i) => i).sort((a, b) => S.items[b].x0 - S.items[a].x0);
+    const lx = X(mob ? .34 : .52), lh = mob ? 15 : 17, gapY = mob ? 38 : 44, fs = ctx.fs;
+    const trails = el('g', null, svg), leads = el('g', null, svg);
+    const items = S.items.map((it, i) => {
+      const trail = el('path', { class: 'trail', d: '' }, trails);
+      const lead = el('line', { class: 'lead' }, leads);
+      const g = el('g', { class: 'it' }, svg);
+      const dot = el('g', { class: 'dot c-ink' }, g);
+      dot.appendChild(rc.circle(0, 0, mob ? 11 : 12, { ...pen, fill: 'currentColor', fillStyle: 'solid', strokeWidth: 1, roughness: .6, seed: ctx.sd() }));
+      const lab = el('g', { class: 'halo' }, g);
+      const b = [txt(lab, 0, 0, it.before[0], { size: fs - 1, cls: 'mut sw' }), txt(lab, 0, lh, it.before[1], { size: fs, cls: 'ink sw' })];
+      const a = [txt(lab, 0, 0, it.after[0], { size: fs + 3, cls: 'ink sw off' }), txt(lab, 0, lh, it.after[1], { size: fs, cls: 'ink sw off' })];
+      return { it, trail, lead, g, dot, lab, b, a, slot: [lx, Y(.95) + order.indexOf(i) * gapY] };
+    });
+
+    const T = S.timing;
+    return p => {
+      drawCurve(seg(p, ...T.curve));
+      const shown = Math.round(seg(p, ...T.items) * items.length);
+      show(regG, p > T.region); show(regLab, p > T.region + .02);
+      items.forEach((o, i) => {
+        const k = ease(seg(p, ...o.it.move));
+        const x = o.it.x0 + (o.it.x1 - o.it.x0) * k, dx = X(x), dy = Y(f(x));
+        show(o.g, i < shown);
+        o.dot.setAttribute('transform', `translate(${dx} ${dy})`);
+        o.dot.classList.toggle('c-accent', k > 0); o.dot.classList.toggle('c-ink', k <= 0);
+        const pos = [o.slot[0] + (dx + 13 - o.slot[0]) * k, o.slot[1] + (dy + 4 - o.slot[1]) * k];
+        o.lab.setAttribute('transform', `translate(${pos[0]} ${pos[1]})`);
+        o.b.forEach(t => t.classList.toggle('off', k > .5)); o.a.forEach(t => t.classList.toggle('off', k <= .5));
+        o.lead.setAttribute('x1', pos[0] - 6); o.lead.setAttribute('y1', pos[1] + lh * .55);
+        o.lead.setAttribute('x2', dx); o.lead.setAttribute('y2', dy - 7);
+        o.lead.style.opacity = i < shown && k < .98 ? 1 - k : 0;
+        let d = '';
+        if (k > 0) for (let j = 0; j <= 14; j++) { const xx = o.it.x0 + (x - o.it.x0) * j / 14; d += (j ? 'L' : 'M') + X(xx).toFixed(1) + ' ' + Y(f(xx)).toFixed(1); }
+        o.trail.setAttribute('d', d);
+      });
+      const ka = seg(p, ...T.closing); ar.set(ka); show(arLab, ka > .5);
+    };
+  },
+});
+</script>
+</body>
+</html>

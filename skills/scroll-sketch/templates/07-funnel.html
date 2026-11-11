@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Funnel · Scroll Sketch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Shantell+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../lib/scroll-sketch.css">
+<!-- optional theme: <link rel="stylesheet" href="../lib/themes/business-design-labs.css"> -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script src="../lib/scroll-sketch.js"></script>
+</head>
+<body>
+<!--
+  TEMPLATE: Funnel
+  Use it when: people (or anything) pass through stages and most fall away; you want to show where.
+  Scroll beats: stages draw one by one as narrowing hand-drawn bars with their counts → the drop-off
+  at each step is marked (hatched, muted) with the share lost → the biggest drop gets an accent
+  circle and a handwritten note.
+  The share lost at each step and the biggest drop are computed from the counts in STORY.
+  Captions can use them too: {count2} is stage 2's count, {lost2} the % lost going into stage 2,
+  {biggest} the biggest % lost (stages count from 0).
+  Edit the STORY block in the script at the bottom. Nothing else needs to change.
+-->
+<main>
+<div class="col">
+  <div class="meta"><b>Example</b> · illustrative numbers</div>
+  <h1>Where a free trial loses people</h1>
+  <p class="lede">A software company offers a free trial. Thousands of people visit; a handful end up paying. The question is where the rest go.</p>
+</div>
+
+<section class="scrolly" id="chart" style="--len:420" aria-label="Chart: a free-trial funnel">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="A funnel of four stages with illustrative numbers. 10,000 visitors; 1,200 start a trial, so 88% drop off; 400 use it twice, 67% drop off; 80 pay, 80% drop off. The biggest drop, the 88% between visiting and starting a trial, is circled with the note: not yet."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">Illustrative numbers, not data from a real company. Bar widths use a square-root scale so the small stages stay visible.</p>
+  <p>Write what comes next here.</p>
+</div>
+</main>
+
+<script>
+/* ========== EDIT THE STORY ========== */
+const STORY = {
+  // top to bottom. at: when the stage draws (0..1)
+  stages: [
+    { name: 'visitors', count: 10000, at: .04 },
+    { name: 'start a trial', count: 1200, at: .12 },
+    { name: 'use it twice', count: 400, at: .20 },
+    { name: 'pay', count: 80, at: .28 },
+  ],
+  lost: '{pct}% lost',          // the words beside each drop; {pct} is computed
+  scale: 'sqrt',                // 'sqrt' keeps small stages visible; 'linear' is strictly to scale (tiny stages become stubs)
+  note: 'not yet',              // handwritten beside the biggest drop
+  steps: [
+    [0,    'Scroll to fill the funnel.'],
+    [.04,  '{count0} people visit the site.'],
+    [.12,  '{count1} of them start a free trial.'],
+    [.20,  '{count2} use it twice.'],
+    [.28,  '{count3} pay.'],
+    [.42,  'At every step, most people fall away.'],
+    [.68,  'The biggest drop comes first: {biggest}% never start a trial. Most of them haven’t said no. Just not yet.'],
+  ],
+  timing: { draw: .06, drops: [.42, .60], biggest: [.68, .80] },   // draw: how long each stage takes
+};
+
+/* ========== DRAWING (no need to edit) ========== */
+const { scene, el, txt, seg, ease, show, grow, label, fmt, pen } = Sketch;
+const ST = STORY.stages;
+const lostPct = ST.map((s, i) => i ? Math.round((1 - s.count / ST[i - 1].count) * 100) : 0);
+const big = lostPct.reduce((b, v, i) => (i && v > lostPct[b] ? i : b), 1);
+const fill = t => t.replace(/\{(count|lost)(\d+)\}/g, (m, k, i) => k === 'count' ? fmt(ST[+i]?.count ?? 0) : String(lostPct[+i] ?? ''))
+  .replace('{biggest}', String(lostPct[big]));
+
+scene('chart', {
+  caps: STORY.steps.map(([p, t]) => [p, fill(t)]),
+  build(ctx) {
+    const { svg, W, mob, vh, rc } = ctx, S = STORY, fs = ctx.fs, n = ST.length;
+    ctx.size(mob ? Math.min(Math.max(vh - 260, 380), 520) : Math.min(Math.max(Math.min(W * .58, vh - 190), 340), 460));
+    const H = ctx.H, top = 8, rowH = (H - top - 8) / n, bh = Math.min(mob ? 40 : 46, rowH * .5);
+    const xN = mob ? 92 : W * .25;                         // names column (right edge)
+    const xR = mob ? W - 84 : W * .76;                     // drop labels column (left edge)
+    const maxW = xR - xN - (mob ? 26 : 40), cx = (xN + xR) / 2 + (mob ? 1 : 0);
+    const c0 = ST[0].count, sc = S.scale === 'linear' ? v => v / c0 : v => Math.sqrt(v / c0);
+    const wOf = v => Math.max(8, maxW * sc(v));
+
+    const ghosts = el('g', null, svg), links = el('g', { class: 'c-ink' }, svg), bars = el('g', null, svg);
+    const rows = ST.map((s, i) => {
+      const w = wOf(s.count), y = top + i * rowH + (rowH - bh) / 2, cy = y + bh / 2;
+      // the kept bar: a block fill (hides the ghost's dashed edge) + sketchy hatch + ink outline
+      const bar = el('g', { class: 'it' }, bars);
+      el('rect', { x: cx - w / 2, y, width: w, height: bh, class: 'bfill' }, bar);
+      const hatch = el('g', { class: 'c-hatch' }, bar);
+      hatch.appendChild(rc.rectangle(cx - w / 2, y, w, bh, { stroke: 'none', fill: 'currentColor', fillStyle: 'hachure', hachureGap: mob ? 5 : 6, hachureAngle: -41, fillWeight: 1, seed: ctx.sd() }));
+      const out = el('g', { class: 'c-ink' }, bar);
+      out.appendChild(rc.rectangle(cx - w / 2, y, w, bh, { ...pen, strokeWidth: 1.8, roughness: .8, seed: ctx.sd() }));
+      const drawOut = grow(out);
+      // count and name, right-aligned to the left of the funnel
+      const nameG = label(svg, xN, cy - 1, fmt(s.count), { anchor: 'end', size: mob ? 16 : 19 });
+      txt(nameG, xN, cy + fs + 3, s.name, { anchor: 'end', size: fs, cls: 'mut' });
+      // sloped sides joining this bar to the one above
+      let drawLink = () => {};
+      if (i) {
+        const pw = wOf(ST[i - 1].count), py = top + (i - 1) * rowH + (rowH - bh) / 2 + bh;
+        const lg = el('g', null, links);
+        lg.appendChild(rc.line(cx - pw / 2, py, cx - w / 2, y, { ...pen, strokeWidth: 1.2, roughness: .7, seed: ctx.sd() }));
+        lg.appendChild(rc.line(cx + pw / 2, py, cx + w / 2, y, { ...pen, strokeWidth: 1.2, roughness: .7, seed: ctx.sd() }));
+        drawLink = grow(lg);
+      }
+      // the drop-off: the previous stage's width, hatched and muted, with the share lost
+      let ghost = null, lost = null;
+      if (i) {
+        const pw = wOf(ST[i - 1].count);
+        ghost = el('g', { class: 'it c-hatch' }, ghosts);
+        el('rect', { x: cx - pw / 2, y, width: pw, height: bh, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }, ghost);
+        [[cx - pw / 2, cx - w / 2], [cx + w / 2, cx + pw / 2]].forEach(([a, b]) => {
+          if (b - a > 2) ghost.appendChild(rc.rectangle(a, y, b - a, bh, { stroke: 'none', fill: 'currentColor', fillStyle: 'hachure', hachureGap: mob ? 7 : 8, hachureAngle: 41, fillWeight: .8, seed: ctx.sd() }));
+        });
+        lost = label(svg, xR + 2, cy + fs * .35, S.lost.replace('{pct}', lostPct[i]), { size: fs + 1, tone: 'mut' });
+      }
+      return { s, i, bar, drawOut, nameG, drawLink, ghost, lost, cy };
+    });
+
+    // the biggest drop: an accent ring around its label, and the note beneath
+    const B = rows[big], lw = (() => { try { return B.lost.getBBox().width; } catch (e) { return 80; } })();
+    const ring = el('g', { class: 'c-accent' }, svg);
+    ring.appendChild(rc.ellipse(xR + 2 + lw / 2, B.cy, lw + (mob ? 24 : 30), mob ? 34 : 38, { ...pen, strokeWidth: 2.2, roughness: 1.1, seed: ctx.sd() }));
+    const drawRing = grow(ring);
+    const note = label(svg, xR + 2 + lw / 2, B.cy + (mob ? 34 : 40), S.note, { anchor: 'middle', size: mob ? 16 : 19 });
+
+    const T = S.timing, nd = n - 1;
+    return p => {
+      rows.forEach((o, i) => {
+        const k = seg(p, o.s.at, o.s.at + T.draw);
+        o.drawLink(seg(k, 0, .4)); o.drawOut(seg(k, .2, 1));
+        show(o.bar, k > .15); show(o.nameG, k > .6);
+        if (o.ghost) {
+          const kd = seg(p, T.drops[0] + (i - 1) * (T.drops[1] - T.drops[0]) / nd, T.drops[0] + i * (T.drops[1] - T.drops[0]) / nd);
+          show(o.ghost, kd > .1); show(o.lost, kd > .6);
+        }
+      });
+      const kb = seg(p, ...T.biggest); drawRing(kb); show(note, kb > .85);
+    };
+  },
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Flow reroute · Scroll Sketch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Shantell+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../lib/scroll-sketch.css">
+<!-- optional theme: <link rel="stylesheet" href="../lib/themes/business-design-labs.css"> -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script src="../lib/scroll-sketch.js"></script>
+</head>
+<body>
+<!--
+  TEMPLATE: Flow reroute
+  Use it when: a flow (of goods, money, people) already happens without you, and you step into the
+  middle of it: a new hub takes over an old route, and something flows back to you.
+  Scroll beats: the first sale draws → the existing route appears (dashed, via someone else) →
+  the new hub appears and the old route dims → the flow runs through the hub → money comes back
+  (accent arrow) → information comes back (ink arrow).
+  Edit the STORY block in the script at the bottom. Box positions and label spots live in
+  STORY.layout, separately for wide screens and phones. Nothing else needs to change.
+-->
+<main>
+<div class="col">
+  <div class="meta"><b>Example</b> · from New Combinations, Issue 1</div>
+  <h1>IKEA joins a market that already existed</h1>
+  <p class="lede">IKEA has launched a marketplace for used IKEA furniture in the UK and Ireland. Follow one piece of furniture.</p>
+</div>
+
+<section class="scrolly" id="chart" style="--len:460" aria-label="Chart: IKEA's second-hand loop">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="A hand-drawn flow diagram. IKEA sells to a first owner. The first owner already resells to a next owner through eBay and Facebook, without IKEA; IKEA is about 9% of Europe's used home-furnishing market. Then an IKEA second-hand marketplace appears, outlined in the accent colour, and the old route fades: first owner to marketplace to next owner, who pays around 60% less than new. Sellers get 15% extra as store credit, so money flows back to IKEA. Finally, data on which products hold their value flows from the marketplace back to IKEA."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">Figures as reported by Ingka (IKEA): the marketplace, the 15% store-credit bonus, the ≈ 60% saving and the ≈ 9% market share. The data arrow is the author's reading, not a stated plan.</p>
+  <p>Write what comes next here.</p>
+</div>
+</main>
+
+<script>
+/* ========== EDIT THE STORY ========== */
+const STORY = {
+  // the five boxes: who makes it, who has it first, who has it next, the route that exists today, the new hub
+  boxes: {
+    maker: ['IKEA'],
+    first: ['first owner'],
+    next:  ['next owner'],
+    old:   ['eBay · Facebook'],
+    hub:   ['IKEA second-hand', 'marketplace'],
+  },
+  labels: {
+    sale:   ['new sale'],
+    old:    ['already happening,', 'without IKEA.', 'IKEA ≈ 9% of Europe’s', 'used home-furnishing market'],
+    credit: ['+15% as store credit'],         // money back to the maker (accent arrow)
+    saving: ['pays ≈ 60% less than new'],     // under the next owner
+    data:   ['data: what', 'holds its value'],// information back to the maker (ink arrow)
+  },
+  // positions: boxes are [centre x, centre y, width px, height px], x and y as fractions of the chart.
+  // labels are [x, y, anchor] (y is the first row's baseline). bends curve each arrow (px, + or -).
+  // words: replace any box or label text on this layout only ({ boxes: {...}, labels: {...} }).
+  layout: {
+    desktop: {
+      boxes: { maker: [.11, .47, 108, 50], first: [.50, .12, 140, 44], next: [.50, .80, 140, 44], hub: [.50, .47, 186, 54], old: [.87, .47, 138, 48] },
+      labels: { sale: [.235, .20, 'middle'], old: [.87, .58, 'middle'], credit: [.11, .32, 'middle'], saving: [.50, .90, 'middle'], data: [.28, .53, 'middle'] },
+      bends: { sale: -40, oldIn: 28, oldOut: 28, toHub: 0, fromHub: 0, credit: -30, data: 0 },
+      words: { labels: { credit: ['+15% as', 'store credit'] } },
+    },
+    // on a phone the maker sits top right, so the sale, credit and data arrows each get their own lane
+    mobile: {
+      boxes: { maker: [.78, .07, 100, 40], first: [.21, .30, 104, 40], next: [.21, .82, 104, 40], hub: [.52, .55, 150, 50], old: [.84, .40, 92, 46] },
+      labels: { sale: [.40, .13, 'middle'], old: [.98, .70, 'end'], credit: [.385, .30, 'start'], saving: [.065, .89, 'start'], data: [.70, .22, 'start'] },
+      bends: { sale: 30, oldIn: 10, oldOut: 14, toHub: -8, fromHub: -8, credit: 30, data: -20 },
+      words: {
+        boxes: { old: ['eBay ·', 'Facebook'] },
+        labels: {
+          old: ['already happening,', 'without IKEA.', 'IKEA ≈ 9% of Europe’s', 'used home-furnishing', 'market'],
+          credit: ['+15% as', 'store credit'],
+        },
+      },
+    },
+  },
+  steps: [
+    [0,    'Scroll to follow a piece of furniture.'],
+    [.005, 'IKEA sells something new. Usually, that is where its part ends.'],
+    [.14,  'People already resell IKEA furniture on eBay and Facebook, without IKEA.'],
+    [.34,  'Now IKEA runs its own second-hand marketplace in the UK and Ireland.'],
+    [.42,  'IKEA Family members buy and sell through it. The buyer pays around 60% less than new.'],
+    [.62,  'Sellers get 15% extra if they take store credit, which nudges the money back to IKEA.'],
+    [.78,  'The bigger prize may be the data: which products hold their value, and what to design next.'],
+  ],
+  timing: { sale: [.02, .12], old: .16, oldLabel: .22, hub: .34, toHub: [.42, .49], fromHub: [.51, .58], credit: [.64, .72], data: [.78, .88] },
+};
+
+/* ========== DRAWING (no need to edit) ========== */
+const { scene, el, seg, show, grow, arrow, edge, centre, box, label, clamp } = Sketch;
+scene('chart', {
+  caps: STORY.steps,
+  build(ctx) {
+    const { svg, W, mob, vh, rc } = ctx, S = STORY;
+    ctx.size(mob ? clamp(vh - 200, 470, 580) : clamp(Math.min(W * .58, vh - 190), 380, 460));
+    const H = ctx.H, fs = ctx.fs, Lt = S.layout[mob ? 'mobile' : 'desktop'], wb = { ...S.boxes, ...(Lt.words || {}).boxes }, wl = { ...S.labels, ...(Lt.words || {}).labels };
+    const B = {}; for (const k in Lt.boxes) { const [x, y, w, h] = Lt.boxes[k]; B[k] = { cx: x * W, cy: y * H, w, h }; }
+    const bend = Lt.bends;
+    const link = (a, b, bd, o) => arrow(rc, svg, edge(B[a], centre(B[b])), edge(B[b], centre(B[a])), bd, { seed: ctx.sd(), ...o });
+
+    // arrows go first so the boxes sit on top of them
+    const oldG = el('g', { class: 'it' }, svg);
+    const oldIn = arrow(rc, oldG, edge(B.first, centre(B.old)), edge(B.old, centre(B.first)), bend.oldIn, { cls: 'c-muted', dash: [6, 5], seed: ctx.sd() });
+    const oldOut = arrow(rc, oldG, edge(B.old, centre(B.next)), edge(B.next, centre(B.old)), bend.oldOut, { cls: 'c-muted', dash: [6, 5], seed: ctx.sd() });
+    oldIn.set(1); oldOut.set(1);
+    const flows = {
+      sale: link('maker', 'first', bend.sale, { cls: 'c-ink' }),
+      toHub: link('first', 'hub', bend.toHub, { cls: 'c-ink', w: 2 }),
+      fromHub: link('hub', 'next', bend.fromHub, { cls: 'c-ink', w: 2 }),
+      credit: link('first', 'maker', bend.credit, { cls: 'c-accent', w: 2.4 }),   // money: accent
+      data: link('hub', 'maker', bend.data, { cls: 'c-ink', w: 1.8 }),            // information: ink
+    };
+
+    box(rc, svg, B.maker, wb.maker, { fs: fs + 3, seed: ctx.sd() });
+    box(rc, svg, B.first, wb.first, { fs, seed: ctx.sd() });
+    box(rc, svg, B.next, wb.next, { fs, seed: ctx.sd() });
+    const oldBox = el('g', { class: 'it' }, svg);
+    box(rc, oldBox, B.old, wb.old, { fs, seed: ctx.sd(), cls: 'c-muted' });
+    const hubBox = el('g', { class: 'it' }, svg);
+    box(rc, hubBox, B.hub, wb.hub, { fs, seed: ctx.sd(), cls: 'c-accent', sw: 2.5 });
+
+    const lab = (k, rows, tone) => { const [x, y, anchor] = Lt.labels[k]; return label(svg, x * W, y * H, rows, { size: fs, anchor, tone }); };
+    const L = {
+      sale: lab('sale', wl.sale),
+      old: lab('old', wl.old, 'mut'),
+      credit: lab('credit', wl.credit),
+      saving: lab('saving', wl.saving),
+      data: lab('data', wl.data),
+    };
+
+    const T = S.timing;
+    return p => {
+      const k = { sale: seg(p, ...T.sale), toHub: seg(p, ...T.toHub), fromHub: seg(p, ...T.fromHub), credit: seg(p, ...T.credit), data: seg(p, ...T.data) };
+      for (const n in flows) flows[n].set(k[n]);
+      show(L.sale, k.sale > .6);
+      const old = p > T.old, hub = p > T.hub;
+      show(oldG, old); show(oldBox, old); show(L.old, p > T.oldLabel);
+      oldG.classList.toggle('dim', hub); oldBox.classList.toggle('dim', hub);
+      show(hubBox, hub);
+      show(L.saving, k.fromHub > .9);
+      show(L.credit, k.credit > .7);
+      show(L.data, k.data > .7);
+    };
+  },
+});
+</script>
+</body>
+</html>

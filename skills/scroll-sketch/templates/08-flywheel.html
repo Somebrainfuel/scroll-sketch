@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Flywheel · Scroll Sketch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Shantell+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../lib/scroll-sketch.css">
+<!-- optional theme: <link rel="stylesheet" href="../lib/themes/business-design-labs.css"> -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script src="../lib/scroll-sketch.js"></script>
+</head>
+<body>
+<!--
+  TEMPLATE: Flywheel
+  Use it when: a business (or habit, or market) feeds itself: each part pushes the next, and the loop
+  gets faster the longer it turns.
+  Scroll beats: nodes appear around a loop → arrows draw between them in order → the loop closes →
+  feeders join from outside → the loop "speeds up" (arrows turn accent, an inner ring spins) →
+  a centre label names what the loop produces.
+  Works for 3–6 loop nodes and a chain of 0–2 feeders into the first node.
+  Edit the STORY block in the script at the bottom. Nothing else needs to change.
+-->
+<main>
+<div class="col">
+  <div class="meta"><b>Example</b> · Amazon’s flywheel, as Jeff Bezos sketched it in 2001</div>
+  <h1>The loop that feeds itself</h1>
+  <p class="lede">Amazon’s growth is often drawn as a wheel: each part pushes the next one round, and every turn makes the next turn easier.</p>
+</div>
+
+<section class="scrolly" id="chart" style="--len:460" aria-label="Chart: Amazon's flywheel">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="A loop of four boxes joined by arrows: customer experience leads to traffic, traffic to sellers, sellers to selection, and selection back to customer experience. From outside the loop, lower cost structure feeds lower prices, which feeds customer experience. An inner ring spins to show the loop speeding up, and the word growth sits in the centre."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">After the flywheel Jeff Bezos sketched in 2001, simplified. The diagram is qualitative: no numbers are implied.</p>
+  <p>Write what comes next here.</p>
+</div>
+</main>
+
+<script>
+/* ========== EDIT THE STORY ========== */
+const STORY = {
+  // the loop, clockwise. Each node is one or two short lines. The first node is where feeders join.
+  loop: [
+    ['customer', 'experience'],
+    ['traffic'],
+    ['sellers'],
+    ['selection'],
+  ],
+  // an optional chain from outside the loop: each feeds the next, and the last feeds loop[0]
+  feeders: [
+    ['lower cost', 'structure'],
+    ['lower prices'],
+  ],
+  centre: 'growth',
+  steps: [
+    [0,    'Scroll to build the flywheel.'],
+    [.04,  'In 2001 Jeff Bezos sketched how Amazon grows, as a loop of four things.'],
+    [.20,  'A better customer experience brings more traffic.'],
+    [.27,  'More traffic attracts more sellers.'],
+    [.34,  'More sellers bring more selection.'],
+    [.41,  'More selection improves the customer experience. The loop closes.'],
+    [.52,  'From outside, lower prices feed the customer experience, and a lower cost structure pays for them.'],
+    [.68,  'Every turn makes the next one easier. The wheel speeds up.'],
+    [.84,  'What comes out of the middle: growth.'],
+  ],
+  // arrows: the loop arrows share this window, one after another. speed: the ring draws, then spins.
+  timing: { nodes: [.04, .16], arrows: [.20, .48], feeders: [.52, .62], speed: [.68, .82], centre: .84 },
+};
+
+/* ========== DRAWING (no need to edit) ========== */
+const { scene, el, txt, seg, ease, show, grow, arrow, edge, box, label, pen } = Sketch;
+scene('chart', {
+  caps: STORY.steps,
+  build(ctx) {
+    const { svg, W, mob, vh, rc } = ctx, S = STORY, n = S.loop.length, nf = S.feeders.length;
+    const bfs = mob ? 13 : 15, blh = bfs * 1.2;
+    // measure each node's words so boxes fit them
+    const measure = lines => {
+      const g = el('g', null, svg); let w = 60;
+      [].concat(lines).forEach(s => txt(g, 0, 0, s, { size: bfs }));
+      try { w = g.getBBox().width; } catch (e) {}
+      g.remove(); return { w: w + (mob ? 20 : 26), h: [].concat(lines).length * blh + (mob ? 14 : 18) };
+    };
+    const loopSz = S.loop.map(measure), feedSz = S.feeders.map(measure);
+    const maxH = Math.max(...loopSz.map(s => s.h)), maxW = Math.max(...loopSz.map(s => s.w));
+
+    // layout: desktop puts the first node at 9 o'clock with feeders to its left;
+    // phones put it at 6 o'clock with feeders stacked underneath
+    const start = mob ? Math.PI / 2 : Math.PI, step = 2 * Math.PI / n;
+    const R = mob ? Math.min(118, W / 2 - maxW / 2 - 6) : Math.min(140, W * .19);
+    const fGap = mob ? maxH + 46 : Math.max(...feedSz.map(s => s.w), 90) + 70;
+    let cx, cy;
+    const ang = i => start + i * step, at = i => [cx + R * Math.cos(ang(i)), cy + R * Math.sin(ang(i))];
+    if (!mob) {
+      const left = R + loopSz[0].w / 2 + (nf ? fGap : 0) + (nf ? Math.max(...feedSz.map(s => s.w)) / 2 - loopSz[0].w / 2 : 0);
+      const right = R + maxW / 2;
+      cx = left + (W - left - right) / 2; cy = 16 + maxH / 2 + R;
+      ctx.size(cy + R + maxH / 2 + 18);
+    } else {
+      cx = W / 2; cy = 12 + maxH / 2 + R;
+      ctx.size(cy + R + maxH / 2 + nf * fGap + 14);
+    }
+
+    const arrows = el('g', null, svg), nodes = el('g', null, svg);
+    const loopB = S.loop.map((lines, i) => {
+      const [x, y] = at(i), b = { cx: x, cy: y, ...loopSz[i] };
+      const g = el('g', { class: 'it' }, nodes);
+      box(rc, g, b, lines, { fs: bfs, seed: ctx.sd() });
+      return { b, g };
+    });
+    // feeders: on desktop, the last sits left of node 0 and the others stack below it; on phones they stack below node 0
+    const n0 = loopB[0].b;
+    const feedB = S.feeders.map((lines, j) => {
+      const d = nf - j;                       // 1 for the one touching the loop
+      const b = mob ? { cx: n0.cx, cy: n0.cy + d * fGap, ...feedSz[j] }
+                    : { cx: n0.cx - fGap, cy: n0.cy + (d - 1) * (maxH + 54), ...feedSz[j] };
+      const g = el('g', { class: 'it' }, nodes);
+      box(rc, g, b, lines, { fs: bfs, seed: ctx.sd() });
+      return { b, g };
+    });
+
+    // loop arrows bow outwards along the circle
+    const loopA = loopB.map((o, i) => {
+      const nb = loopB[(i + 1) % n].b, a = edge(o.b, [nb.cx, nb.cy], 6), z = edge(nb, [o.b.cx, o.b.cy], 6);
+      const mx = (a[0] + z[0]) / 2, my = (a[1] + z[1]) / 2, dx = z[0] - a[0], dy = z[1] - a[1], len = Math.hypot(dx, dy) || 1;
+      const nrm = [-dy / len, dx / len], out = Math.sign(nrm[0] * (mx - cx) + nrm[1] * (my - cy)) || 1;
+      const sag = Math.max(0, R - Math.hypot(mx - cx, my - cy));
+      return arrow(rc, arrows, a, z, out * sag * 1.5, { cls: 'c-ink', w: 2, head: 10, seed: ctx.sd() });
+    });
+    const chain = [...feedB.map(o => o.b), n0];
+    const feedA = feedB.map((o, j) => {
+      const nb = chain[j + 1];
+      return arrow(rc, arrows, edge(o.b, [nb.cx, nb.cy], 6), edge(nb, [o.b.cx, o.b.cy], 6), 0, { cls: 'c-ink', w: 1.8, head: 9, rough: .35, seed: ctx.sd() });
+    });
+
+    // the speed ring: two accent arcs with arrowheads, inside the loop, that spin as you scroll
+    const rIn = R * (mob ? .5 : .48), spin = el('g', null, svg);
+    const arcs = [0, Math.PI].map(o => {
+      const a0 = start + o + .35, a1 = a0 + Math.PI - .7, pts = [];
+      for (let t = 0; t <= 12; t++) { const a = a0 + (a1 - a0) * t / 12; pts.push([cx + rIn * Math.cos(a), cy + rIn * Math.sin(a)]); }
+      const g = el('g', { class: 'c-accent' }, spin), line = el('g', null, g);
+      line.appendChild(rc.curve(pts, { ...pen, strokeWidth: 2.4, roughness: .7, seed: ctx.sd() }));
+      const e = pts[12], q = pts[11], th = Math.atan2(e[1] - q[1], e[0] - q[0]), hl = 10;
+      const head = el('g', { class: 'head' }, g);
+      head.appendChild(rc.linearPath([[e[0] - hl * Math.cos(th - .45), e[1] - hl * Math.sin(th - .45)], e, [e[0] - hl * Math.cos(th + .45), e[1] - hl * Math.sin(th + .45)]], { ...pen, strokeWidth: 2.4, roughness: .4, seed: ctx.sd() }));
+      return { draw: grow(line), head };
+    });
+    const centre = label(svg, cx, cy + (mob ? 7 : 8), S.centre, { anchor: 'middle', size: mob ? 20 : 24 });
+
+    const T = S.timing, aLen = (T.arrows[1] - T.arrows[0]) / n, fLen = nf ? (T.feeders[1] - T.feeders[0]) / nf : 0;
+    return p => {
+      const kn = seg(p, ...T.nodes);
+      loopB.forEach((o, i) => show(o.g, kn > i / n));
+      loopA.forEach((a, i) => a.set(seg(p, T.arrows[0] + i * aLen, T.arrows[0] + (i + .8) * aLen)));
+      feedB.forEach((o, j) => {
+        // the feeder nearest the loop appears first, so the chain grows outwards
+        const r = nf - 1 - j, k = seg(p, T.feeders[0] + r * fLen, T.feeders[0] + (r + .8) * fLen);
+        show(o.g, k > 0); feedA[j].set(seg(k, .35, 1));
+      });
+      const ks = seg(p, ...T.speed), kd = seg(ks, 0, .35), kr = seg(ks, .3, 1);
+      arcs.forEach(a => { a.draw(kd); show(a.head, kd > .97); });
+      spin.setAttribute('transform', `rotate(${(kr * kr * 540).toFixed(1)} ${cx} ${cy})`);
+      loopA.forEach(a => { a.g.classList.toggle('c-accent', ks > 0); a.g.classList.toggle('c-ink', ks <= 0); });
+      show(centre, p > T.centre);
+    };
+  },
+});
+</script>
+</body>
+</html>

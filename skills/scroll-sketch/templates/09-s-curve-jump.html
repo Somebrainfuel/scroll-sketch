@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>S-curve jump · Scroll Sketch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Shantell+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../lib/scroll-sketch.css">
+<!-- optional theme: <link rel="stylesheet" href="../lib/themes/business-design-labs.css"> -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script src="../lib/scroll-sketch.js"></script>
+</head>
+<body>
+<!--
+  TEMPLATE: S-curve jump
+  Use it when: a business sits near the top of one S-curve while the next one is starting, lower
+  and later, and the story is about the jump from one to the other (made, missed or still ahead).
+  Scroll beats: first S-curve draws → "you are here" marker near its top → second S-curve starts
+  low and rises past the first → the crossing is circled → an event is marked on the time axis →
+  a dashed arrow shows the jump, with a handwritten note.
+  Edit the STORY block in the script at the bottom. Nothing else needs to change.
+-->
+<main>
+<div class="col">
+  <div class="meta"><b>Example</b> · curves illustrative; dates are well documented</div>
+  <h1>Kodak saw the next curve first</h1>
+  <p class="lede">In 1975 a Kodak engineer built the first digital camera. Film was still climbing. The next curve was already visible from the top of the old one.</p>
+</div>
+
+<section class="scrolly" id="chart" style="--len:460" aria-label="Chart: film and digital photography as two S-curves">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="Two S-curves over time. Film photography rises and levels off. A marker near its top, at 1975, reads 'you are here: Kodak builds the first digital camera'. A digital curve starts near zero in 1975, climbs steeply and rises past film. 2012 is marked on the time axis: Kodak files for bankruptcy. A dashed arrow from the marker down to the digital curve is labelled: saw the next curve first, didn't jump."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">The shapes of both curves are illustrative, not measured data. The dates (1975: Steve Sasson at Kodak builds the first digital camera; 2012: Kodak files for bankruptcy) are well documented.</p>
+  <p>Write what comes next here.</p>
+</div>
+</main>
+
+<script>
+/* ========== EDIT THE STORY ========== */
+const STORY = {
+  years: [1890, 2025],              // the time axis: first and last year
+  ticks: [1900, 1925, 1950, 1975],  // years written on the axis from the start
+  yTitle: 'how widely used',
+  // each curve is an S: halfway up in year `mid`, levelling off at `top` (0..1); smaller `width` = steeper climb.
+  // `from` is the year the curve starts. The first curve's name sits just left of it in year `labelAt`.
+  first:  { name: 'film',    from: 1890, mid: 1930, width: 9, top: .62, labelAt: 1938 },
+  second: { name: 'digital', from: 1975, mid: 2000, width: 5, top: .92 },
+  here:   { year: 1975, rows: ['1975 · you are here', 'Kodak builds the', 'first digital camera'] },
+  event:  { year: 2012, label: 'Kodak files for bankruptcy', short: 'Kodak bankrupt' },
+  jump:   { to: 1997 },                          // the dashed arrow runs from "you are here" to this year on the second curve
+  note:   { rows: ['saw the next curve first,', 'didn’t jump'], mob: ['saw the next', 'curve first,', 'didn’t jump'] },
+  steps: [
+    [0,    'Scroll to draw the curve.'],
+    [.005, 'Film photography: slow to start, then everywhere, then levelling off.'],
+    [.18,  '1975: Kodak engineer Steve Sasson builds the first digital camera.'],
+    [.30,  'The next curve starts lower and later, at the bottom.'],
+    [.54,  'Then it climbs, and rises past the first.'],
+    [.64,  '2012: Kodak files for bankruptcy.'],
+    [.74,  'Seeing the next curve was not the hard part. Jumping to it, from the top of the one that pays, was.'],
+  ],
+  timing: { first: [0, .13], here: .19, second: [.31, .51], cross: .55, event: .65, jump: [.75, .81], note: .83 },
+};
+
+/* ========== DRAWING (no need to edit) ========== */
+const { scene, el, txt, seg, show, reveal, arrow, label, axes, pen } = Sketch;
+scene('chart', {
+  caps: STORY.steps,
+  build(ctx) {
+    const { svg, W, mob, vh, rc } = ctx, S = STORY, fs = ctx.fs;
+    ctx.size(mob ? Math.min(Math.max(vh - 240, 380), 540) : Math.min(Math.max(Math.min(W * .66, vh - 190), 340), 480));
+    const { X: ax, Y, B } = axes(ctx, { y: S.yTitle, bottom: 48 });
+    const [y0, y1] = S.years, X = yr => ax((yr - y0) / (y1 - y0)), H = ctx.H;
+    const sCurve = c => yr => c.top / (1 + Math.exp(-(yr - c.mid) / c.width));
+    const f1 = sCurve(S.first), f2 = sCurve(S.second);
+
+    // year ticks
+    const tk = el('g', { class: 'c-muted' }, svg);
+    S.ticks.forEach(yr => {
+      tk.appendChild(rc.line(X(yr), H - B - 4, X(yr), H - B + 4, { ...pen, strokeWidth: 1.2, roughness: .4, seed: ctx.sd() }));
+      txt(tk, X(yr), H - B + 20, String(yr), { size: fs - 1, anchor: 'middle', cls: 'mut' });
+    });
+
+    const line = (c, f, cls, w) => {
+      const g = el('g', { class: cls }, svg), pts = [];
+      for (let i = 0; i <= 40; i++) { const yr = c.from + (y1 - c.from) * i / 40; pts.push([X(yr), Y(f(yr))]); }
+      g.appendChild(rc.curve(pts, { ...pen, strokeWidth: w, roughness: .7, seed: ctx.sd() }));
+      return reveal(ctx, g, { from: X(c.from) - 4, to: X(y1) + 6 });
+    };
+    // first curve and its name (to the left of the climb)
+    const draw1 = line(S.first, f1, 'c-alt', 2.4);
+    const lab1 = label(svg, X(S.first.labelAt) - 12, Y(f1(S.first.labelAt)) + 5, S.first.name, { anchor: 'end', size: fs + 2, tone: 'mut' });
+    // second curve, its name above where it ends
+    const draw2 = line(S.second, f2, 'c-accent', 2.8);
+    const lab2 = label(svg, X(y1), Y(f2(y1)) - 12, S.second.name, { anchor: 'end', size: fs + 2 });
+
+    // "you are here" on the first curve
+    const hx = X(S.here.year), hy = Y(f1(S.here.year)), lh = (fs + 1) * 1.25;
+    const here = el('g', { class: 'it' }, svg);
+    const dot = el('g', { class: 'c-ink' }, here);
+    dot.appendChild(rc.circle(hx, hy, 11, { ...pen, fill: 'currentColor', fillStyle: 'solid', strokeWidth: 1, roughness: .5, seed: ctx.sd() }));
+    dot.appendChild(rc.circle(hx, hy, 24, { ...pen, strokeWidth: 1.4, roughness: .8, seed: ctx.sd() }));
+    const hereLab = label(here, hx - (mob ? 22 : 0), hy - 22 - (S.here.rows.length - 1) * lh, S.here.rows, { anchor: 'middle', size: fs + 1, visible: true });
+    hereLab.firstChild.setAttribute('class', 'mut');
+
+    // where the second curve passes the first
+    let cx = S.second.from; while (cx < y1 && f2(cx) < f1(cx)) cx += .1;
+    const cross = el('g', { class: 'it c-ink' }, svg);
+    cross.appendChild(rc.circle(X(cx), Y(f1(cx)), 20, { ...pen, strokeWidth: 1.5, roughness: .9, seed: ctx.sd() }));
+
+    // the event on the time axis, with a dotted line up to the first curve
+    const ev = S.event, ex = X(ev.year), ey = Y(f1(ev.year));
+    const evG = el('g', { class: 'it' }, svg);
+    el('line', { class: 'lead', x1: ex, y1: H - B - 2, x2: ex, y2: ey + 4 }, evG);
+    const evT = el('g', { class: 'c-ink' }, evG);
+    evT.appendChild(rc.line(ex, H - B - 5, ex, H - B + 5, { ...pen, strokeWidth: 1.6, roughness: .4, seed: ctx.sd() }));
+    txt(evT, ex, H - B + 20, String(ev.year), { size: fs - 1, anchor: 'middle', cls: 'ink' });
+    txt(evT, Math.min(ex + 18, ctx.W - 4), H - B + 38, mob ? ev.short : ev.label, { size: fs - 1, anchor: 'end', cls: 'ink' });
+
+    // the jump: a dashed arrow from "you are here" down to the second curve, and the note beside it
+    const jx = X(S.jump.to), jy = Y(f2(S.jump.to));
+    const jmp = arrow(rc, svg, [hx + 10, hy + 16], [jx - 7, jy - 3], 22, { cls: 'c-accent', w: 2.2, dash: [7, 6], head: 11, seed: ctx.sd() });
+    const nRows = mob ? S.note.mob : S.note.rows, nfs = mob ? 15 : 17;
+    // on narrow screens the note sits below the arrowhead, clear of the first curve's climb
+    const note = mob ? label(svg, jx - 24, jy + 14, nRows, { anchor: 'end', size: nfs })
+      : label(svg, jmp.mid[0] - 16, jmp.mid[1] + 8, nRows, { anchor: 'end', size: nfs });
+
+    const T = S.timing;
+    return p => {
+      draw1(seg(p, ...T.first)); show(lab1, p > T.first[1] * .8);
+      show(here, p > T.here);
+      draw2(seg(p, ...T.second)); show(lab2, p > T.second[1] - .02);
+      show(cross, p > T.cross);
+      show(evG, p > T.event);
+      jmp.set(seg(p, ...T.jump)); show(note, p > T.note);
+    };
+  },
+});
+</script>
+</body>
+</html>

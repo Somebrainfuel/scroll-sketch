@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Count up · Scroll Sketch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Shantell+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../lib/scroll-sketch.css">
+<!-- optional theme: <link rel="stylesheet" href="../lib/themes/business-design-labs.css"> -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script src="../lib/scroll-sketch.js"></script>
+</head>
+<body>
+<!--
+  TEMPLATE: Count up
+  Use it when: a big count is the news, and a quick sum turns it into a number one person can feel
+  (a price per customer, a cost per head, a share per user).
+  Scroll beats: a grid of dots fills while a counter climbs → a "how fast" note lands → a handwritten
+  sum appears line by line → the answer is underlined → one dot is circled ("one of them") → a caveat.
+  Edit the STORY block in the script at the bottom. Nothing else needs to change.
+-->
+<main>
+<div class="col">
+  <div class="meta"><b>Example</b> · from New Combinations, Issue 1</div>
+  <h1>A marketing team for about $21 a month</h1>
+  <p class="lede">Vilnius startup Holo sells AI-made marketing to small businesses. Its growth is the striking part, and a little arithmetic shows how small the yes has become.</p>
+</div>
+
+<section class="scrolly" id="chart" style="--len:400" aria-label="Chart: Holo's customers and the average price">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="A grid of 200 hand-drawn dots fills up, each dot standing for 100 paying businesses, until it reads more than 20,000 paying businesses in about eight months. Beside it a handwritten sum: $5,000,000 a year, divided by 12 months, divided by 20,000 businesses, is about $21 per business a month, underlined. One dot is circled: one of them. A note says it's an average, not a price."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">Figures as reported by The Recursive (more than 20,000 paying businesses; about $5 million in annual recurring revenue). The $21 is a rough average worked out from those two numbers, not a list price.</p>
+  <p>Write what comes next here.</p>
+</div>
+</main>
+
+<script>
+/* ========== EDIT THE STORY ========== */
+const STORY = {
+  grid: { cols: 20, rows: 10 },           // cols × rows dots
+  unit: 100,                              // what one dot stands for
+  unitLabel: 'paying businesses · each dot = 100',
+  total: '20,000+',                       // what the counter reads once every dot is in
+  pace: 'in about eight months',          // appears when the grid is full
+  sum: ['$5,000,000 a year', '÷ 12 months', '÷ 20,000 businesses'],   // the handwritten lines
+  answer: '≈ $21', answerNote: 'per business, a month',
+  pick: { col: 15, row: 9, label: 'one of them' },   // the dot that gets circled (0-based; label sits under the grid)
+  caveat: 'an average, not a price',
+  steps: [
+    [0,    'Each dot is 100 paying businesses.'],
+    [.02,  'Holo reportedly signed up more than 20,000 paying businesses in about eight months.'],
+    [.42,  'Some rough maths on its reported $5 million of annual recurring revenue.'],
+    [.70,  'For one small business, that is a marketing production team for about $21 a month.'],
+    [.86,  'It’s an average, not a price. But it shows how small the yes has become.'],
+  ],
+  timing: { fill: [.02, .36], pace: .37, sum: [.42, .60], underline: [.62, .68], pick: [.72, .80], caveat: .86 },
+};
+
+/* ========== DRAWING (no need to edit) ========== */
+const { scene, el, txt, seg, show, grow, fmt, pen } = Sketch;
+scene('chart', {
+  caps: STORY.steps,
+  build(ctx) {
+    const { svg, W, mob, rc } = ctx, S = STORY;
+    const cols = S.grid.cols, rows = S.grid.rows, N = cols * rows;
+    // phones: grid across the full width, sum underneath. Wider screens: grid left, sum right.
+    const step = mob ? Math.floor((W - 8) / cols) : Math.min(22, Math.floor(W * .54 / cols));
+    // on wide screens the grid and the sum (about 260px) sit together in the middle
+    const gx = mob ? Math.round((W - cols * step) / 2) : Math.max(8, Math.round((W - cols * step - 48 - 260) / 2)), gy = 62;
+    const gw = cols * step, gh = rows * step;
+    const fs = mob ? 15 : 17, lh = fs * 1.75;
+    const sx = mob ? Math.max(12, gx) : gx + gw + 48, sy = mob ? gy + gh + 72 : gy + 22;
+    ctx.size(mob ? sy + 3.45 * lh + fs * 3.4 : Math.max(gy + gh + 44, sy + 3.45 * lh + fs * 3.6));
+
+    // the counter and the pace note
+    const head = el('g', { class: 'halo' }, svg);
+    const count = txt(head, gx, 30, '0', { size: mob ? 22 : 26 });
+    txt(head, gx, 50, S.unitLabel, { size: mob ? 12.5 : 13.5, cls: 'mut' });
+    const pace = el('g', { class: 'lab halo' }, svg);
+    txt(pace, gx + gw, 30, S.pace, { size: mob ? 13 : 15, anchor: 'end' });
+
+    // the dots
+    const dots = [];
+    for (let i = 0; i < N; i++) {
+      const r = Math.floor(i / cols), c = i % cols;
+      const g = el('g', { class: 'it c-ink' }, svg);
+      g.appendChild(rc.circle(gx + c * step + step / 2, gy + r * step + step / 2, step * .56, { ...pen, fill: 'currentColor', fillStyle: 'solid', strokeWidth: .8, roughness: .5, seed: 900 + i }));
+      dots.push(g);
+    }
+
+    // one of them: circled in the accent, labelled under the grid
+    const pk = S.pick, pick = pk.row * cols + pk.col;
+    const pcx = gx + pk.col * step + step / 2, pcy = gy + pk.row * step + step / 2;
+    const ring = el('g', { class: 'c-accent' }, svg);
+    ring.appendChild(rc.circle(pcx, pcy, step * 1.9, { ...pen, strokeWidth: 2.2, roughness: 1.4, seed: ctx.sd() }));
+    const ringGrow = grow(ring);
+    const oneY = gy + gh + (mob ? 26 : 30);
+    const lead = el('line', { class: 'lead', x1: pcx, y1: pcy + step * .95 + 2, x2: pcx, y2: oneY - 14 }, svg);
+    const one = el('g', { class: 'lab halo' }, svg);
+    txt(one, pcx, oneY, pk.label, { size: mob ? 13 : 15, anchor: 'middle' });
+
+    // the handwritten sum
+    const sumG = S.sum.map((s, i) => { const g = el('g', { class: 'it halo' }, svg); txt(g, sx, sy + i * lh, s, { size: fs }); return g; });
+    let sw = 0; sumG.forEach(g => { try { sw = Math.max(sw, g.querySelector('text').getComputedTextLength()); } catch (e) { sw = 230; } });
+    const ruleY = sy + (S.sum.length - .55) * lh, ansY = sy + (S.sum.length + .45) * lh;
+    const rule = el('g', { class: 'it c-ink' }, svg);
+    rule.appendChild(rc.line(sx - 4, ruleY, sx + (sw || 230) + 12, ruleY, { ...pen, strokeWidth: 1.6, roughness: 1, seed: ctx.sd() }));
+    const ans = el('g', { class: 'it halo' }, svg);
+    const ansT = txt(ans, sx, ansY, S.answer, { size: fs + 12 });
+    txt(ans, sx, ansY + fs * 1.55, S.answerNote, { size: fs - 1 });
+    let aw = 80; try { aw = ansT.getComputedTextLength() || aw; } catch (e) { /* keep estimate */ }
+    const und = el('g', { class: 'c-accent' }, svg);
+    und.appendChild(rc.line(sx - 2, ansY + 8, sx + aw + 4, ansY + 6, { ...pen, strokeWidth: 3, roughness: 1.2, seed: ctx.sd() }));
+    const undGrow = grow(und);
+    const caveat = el('g', { class: 'lab halo' }, svg);
+    txt(caveat, sx, ansY + fs * 3.05, S.caveat, { size: fs - 2, cls: 'mut' });
+
+    const T = S.timing;
+    return p => {
+      const n = Math.round(seg(p, ...T.fill) * N);
+      dots.forEach((d, i) => show(d, i < n));
+      count.textContent = n >= N ? S.total : fmt(n * S.unit);
+      show(pace, n >= N && p > T.pace);
+      const s = seg(p, ...T.sum), m = S.sum.length;
+      // the lines arrive one by one, then the rule, then the answer
+      sumG.forEach((g, i) => show(g, s > i * (.66 / m) + .001));
+      show(rule, s > .7); show(ans, s > .85);
+      undGrow(seg(p, ...T.underline));
+      const kr = seg(p, ...T.pick); ringGrow(kr);
+      show(one, kr > .8); lead.style.opacity = kr > .8 ? 1 : 0;
+      dots.forEach((d, i) => d.classList.toggle('dim', kr > 0 && i !== pick));
+      show(caveat, p > T.caveat);
+    };
+  },
+});
+</script>
+</body>
+</html>

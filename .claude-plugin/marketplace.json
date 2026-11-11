@@ -1,0 +1,11 @@
+{
+  "name": "scroll-sketch",
+  "owner": { "name": "Gary Fox" },
+  "plugins": [
+    {
+      "name": "scroll-sketch",
+      "source": "./",
+      "description": "Hand-drawn, scroll-driven chart stories for newsletters and blogs, with 12 starter templates and GIF export for email."
+    }
+  ]
+}

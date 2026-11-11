@@ -1,0 +1,17 @@
+/* Theme: Business Design Labs. Load after scroll-sketch.css.
+   Warm paper, white blocks, near-black ink, IBM Plex Sans. The brand orange is for shapes only:
+   it is too light for text (2.9:1 on the paper), so labels stay in ink or muted.
+   Font link to add to <head>: https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Shantell+Sans:wght@400;500&display=swap */
+:root{
+  --ground:#f2efe8; --block:#ffffff; --ink:#1c1a18; --muted:#5e5952;
+  --accent:#dc6f42; --accent-2:#5e5952; --hatch:#a69f94; --hair:#d9d4ca;
+  --sans:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#131c2b; --block:#1c2739; --ink:#f2efe8; --muted:#a3abb8;
+  --accent:#dc6f42; --accent-2:#a3abb8; --hatch:#5f6b80; --hair:#2b3851; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --ground:#131c2b; --block:#1c2739; --ink:#f2efe8; --muted:#a3abb8;
+  --accent:#dc6f42; --accent-2:#a3abb8; --hatch:#5f6b80; --hair:#2b3851; color-scheme:dark;
+}

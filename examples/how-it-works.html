@@ -1,0 +1,601 @@
+<title>Scroll Sketch Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Shantell+Sans:wght@400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<style>
+/* Layout: one reading column (~62ch), with wide figures that break out a little on desktop.
+   The look is a sketchbook on graph paper: biro-blue ink for what matters, a pencil-red line, a yellow marker. */
+:root{
+  --page:#fbfbfa; --surface:#ffffff; --sunken:#f1f1ee; --hair:#d9d8d3; --grid:#ecebe6;
+  --ink:#17181c; --body:#4a4b50; --muted:#6f7076;
+  --biro:#2a55c9; --biro-soft:#e3e9fa; --pencil:#cf4a24; --marker:#ffd94a; --on-marker:#17181c;
+  --sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --hand:"Shantell Sans","Comic Neue","Segoe Print",cursive;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --measure:62ch; --ease:cubic-bezier(.23,1,.32,1);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --page:#121316; --surface:#1a1b1f; --sunken:#202127; --hair:#33343b; --grid:#1c1d22;
+  --ink:#eeede9; --body:#b9b8b3; --muted:#8f8e8a;
+  --biro:#88a6ff; --biro-soft:#1e2740; --pencil:#f0825b; --marker:#e9c63c; --on-marker:#121316;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --page:#121316; --surface:#1a1b1f; --sunken:#202127; --hair:#33343b; --grid:#1c1d22;
+  --ink:#eeede9; --body:#b9b8b3; --muted:#8f8e8a;
+  --biro:#88a6ff; --biro-soft:#1e2740; --pencil:#f0825b; --marker:#e9c63c; --on-marker:#121316;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--page); color:var(--body);
+  font:400 16px/1.65 var(--sans); -webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+main{padding-block:56px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.col{max-width:var(--measure);margin:0 auto}
+h1,h2,h3{color:var(--ink);text-wrap:balance;margin:0}
+h1{font:500 clamp(30px,6vw,44px)/1.1 var(--hand);letter-spacing:-.01em}
+h2{font:500 26px/1.2 var(--hand);padding-top:72px;margin-bottom:8px}
+h3{font:600 16px/1.3 var(--sans);margin:28px 0 4px}
+p{margin:12px 0;text-wrap:pretty}
+a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--marker);text-decoration-thickness:3px;text-underline-offset:3px}
+a:hover{text-decoration-color:var(--biro)}
+:focus-visible{outline:2px solid var(--biro);outline-offset:2px;border-radius:4px}
+.mark{background:linear-gradient(100deg,transparent 2%,var(--marker) 4%,var(--marker) 96%,transparent 98%);color:var(--on-marker);padding:0 .2em;border-radius:2px}
+.lede{font-size:18px;color:var(--ink)}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+code{font:400 .88em/1 var(--mono);background:var(--sunken);padding:.12em .35em;border-radius:4px;color:var(--ink)}
+
+/* the ingredients list */
+.ingredients{list-style:none;padding:0;margin:20px 0 0;display:grid;gap:10px}
+.ingredients li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:baseline}
+.ingredients b{color:var(--ink);font-weight:600}
+.ingredients .n{font:500 18px/1 var(--hand);color:var(--biro)}
+
+/* ------- the scroll story ------- */
+.scrolly{position:relative;height:460vh;height:460svh;margin-top:28px}
+.pin{position:sticky;top:0;height:100vh;height:100svh;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.wide{max-width:780px;margin:0 auto;width:100%}
+.host{position:relative;width:100%}
+.ch{display:block;overflow:visible;max-width:100%}
+.ch text{font-family:var(--hand)}
+.c-ink{color:var(--ink)} .c-biro{color:var(--biro)} .c-pencil{color:var(--pencil)} .c-muted{color:var(--muted)}
+.ch .axl text{fill:var(--muted)}
+.ch .it{opacity:0;transform:translateY(-6px);transition:opacity 240ms var(--ease),transform 300ms var(--ease),color 240ms var(--ease)}
+.ch .it.on{opacity:1;transform:none}
+.ch .it text,.ch .halo text{fill:currentColor;paint-order:stroke;stroke:var(--page);stroke-width:5px;stroke-linejoin:round}
+.ch .lab{opacity:0;transition:opacity 260ms var(--ease)} .ch .lab.on{opacity:1}
+.ch .trail{stroke:var(--biro);stroke-width:1.4;stroke-dasharray:2 4;fill:none}
+.ch .note text{fill:var(--biro)}
+.caption{min-height:3.2em;font-size:15px;color:var(--ink);text-align:center;max-width:56ch;margin:0 auto;transition:opacity 200ms var(--ease)}
+.caption .step{font:500 12px/1 var(--mono);color:var(--muted);display:block;margin-bottom:4px;letter-spacing:.06em}
+
+/* the progress meter under the story: it teaches the machinery while you scroll */
+.meter{max-width:780px;margin:0 auto;width:100%;font:400 12px/1.2 var(--mono);color:var(--muted)}
+.meter .bar{position:relative;display:grid;grid-template-columns:10fr 25fr 5fr 35fr 7fr 18fr;height:22px;border:1px solid var(--hair);border-radius:6px;overflow:hidden;background:var(--surface)}
+.meter .bar span{display:flex;align-items:center;justify-content:center;border-right:1px solid var(--hair);white-space:nowrap;overflow:hidden;font-size:11px}
+.meter .bar span:last-of-type{border-right:0}
+.meter .bar span.gap{background:repeating-linear-gradient(135deg,transparent 0 4px,var(--sunken) 4px 8px)}
+.meter .bar span.act{background:var(--biro-soft);color:var(--ink)}
+.meter .needle{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--pencil);left:0;border-radius:1px}
+.meter .row{display:flex;justify-content:space-between;gap:12px;margin-top:6px;flex-wrap:wrap}
+.meter output{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* ------- explainer blocks ------- */
+pre{margin:14px 0;padding:14px 16px;background:var(--surface);border:1px solid var(--hair);border-radius:8px;overflow-x:auto;font:400 13px/1.55 var(--mono);color:var(--ink);tab-size:2}
+pre .k{color:var(--biro)} pre .c{color:var(--muted)}
+.figure{margin:18px 0;padding:16px;background:var(--surface);border:1px solid var(--hair);border-radius:10px}
+.figure svg{display:block;width:100%;height:auto;overflow:visible}
+.figure .cap{font-size:13px;color:var(--muted);margin-top:8px}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 18px;margin-top:12px}
+.controls label{display:grid;gap:4px;font:500 12px/1.2 var(--mono);color:var(--muted)}
+.controls output{color:var(--ink);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--biro)}
+select{font:400 14px var(--sans);padding:5px 8px;border:1px solid var(--hair);border-radius:6px;background:var(--page);color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:720px){.two{grid-template-columns:1fr 1fr}}
+.two > *{min-width:0}
+
+.copyblock{position:relative}
+.copy{position:absolute;top:8px;right:8px;font:500 12px/1 var(--sans);padding:7px 10px;border-radius:6px;border:1px solid var(--hair);background:var(--page);color:var(--ink);cursor:pointer}
+.copy:hover{border-color:var(--biro)}
+.copyblock pre{padding-top:40px;max-height:420px}
+.prompt{white-space:pre-wrap;font:400 14px/1.6 var(--sans)}
+
+.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0;display:grid;gap:10px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px}
+.steps li::before{content:counter(s);font:500 18px/1.4 var(--hand);color:var(--biro)}
+.steps li > div{min-width:0}
+.foot{margin-top:72px;padding-top:16px;border-top:1px solid var(--hair);font-size:13px;color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<main>
+<div class="col">
+  <div class="eyebrow">A teardown of Ben's Bites · "How I got seduced"</div>
+  <h1>Hand-drawn charts that draw themselves as you scroll</h1>
+  <p class="lede">Ben's Ramp story looks like someone sketched it on a notepad, and every chart builds up as you read. It's less magic than it looks. It's five small, plain web tricks used together.</p>
+  <p>I took apart <a href="https://sessions.bensbites.com/ramp" target="_blank" rel="noopener">his live page</a>. It's a single HTML page, a free library called <b>Rough.js</b> for the sketchy lines, the <b>Shantell Sans</b> handwriting font, and one small script per chart. The <a href="https://www.bensbites.com/p/how-i-got-seduced" target="_blank" rel="noopener">email version</a> uses screen-recorded GIFs of the same charts, because emails can't run code.</p>
+
+  <ul class="ingredients">
+    <li><span class="n">1</span><span><b>A pinned stage.</b> A very tall section with a chart inside that sticks to the screen while you scroll past it.</span></li>
+    <li><span class="n">2</span><span><b>One number: scroll progress.</b> How far through the section you are, from 0 to 1.</span></li>
+    <li><span class="n">3</span><span><b>A script.</b> Slices of that number mean "draw the line", "add the dots", "move these up".</span></li>
+    <li><span class="n">4</span><span><b>A sketchy pen.</b> Rough.js draws normal SVG lines and circles with a wobble, like a marker.</span></li>
+    <li><span class="n">5</span><span><b>Reveal tricks.</b> Clipping a line so it grows, fading things in, sliding dots to new spots.</span></li>
+  </ul>
+
+  <h2>Try it: scroll slowly</h2>
+  <p>Here's an example I built from scratch, about AI projects. The bar under the chart shows the machinery: the red needle is the scroll progress, and the shaded block is the step that's playing.</p>
+</div>
+
+<section class="scrolly" id="story" aria-label="Scroll story: where AI projects pay off">
+  <div class="pin">
+    <figure class="wide" style="margin:0">
+      <div class="host" id="storyHost" role="img" aria-label="A hand-drawn chart. Across: effort to build. Up: value to the business. A dashed line of expected payoff runs diagonally. Seven AI projects sit on it, from meeting notes near the bottom left to a custom agent platform at the top right. Then the four plain, everyday jobs (meeting notes, invoice matching, sales email drafts, contract review) rise far above the line, and a scribbled circle marks them as boring jobs done daily."></div>
+    </figure>
+    <p class="caption" id="caption" aria-live="polite"><span class="step">STEP 0</span>Scroll down to start drawing.</p>
+    <div class="meter" aria-hidden="true">
+      <div class="bar" id="bar">
+        <span>axes</span><span>plot dots</span><span class="gap"></span><span>the boring ones rise</span><span class="gap"></span><span>note</span>
+        <i class="needle" id="needle"></i>
+      </div>
+      <div class="row"><span>scroll progress p = <output id="pOut">0.00</output></span><span>section height: 460vh · chart pinned with position: sticky</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="col">
+  <p>Every part of that came from one number between 0 and 1. Here's each ingredient, with the code that does it.</p>
+
+  <h2>1 · Pin the chart</h2>
+  <p>The section is 4–6 screens tall. Inside it, a box exactly one screen tall uses <code>position: sticky</code>, so it stays put while the rest of the section scrolls past. Ben's sections are 400vh to 620vh tall. Taller means slower and calmer.</p>
+<pre><span class="c">&lt;!-- HTML --&gt;</span>
+&lt;section class="scrolly" id="story"&gt;
+  &lt;div class="pin"&gt;&lt;div class="host"&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/section&gt;
+
+<span class="c">/* CSS */</span>
+.scrolly { position: relative; height: 460vh; }
+.pin { position: sticky; top: 0; height: 100vh;
+       display: flex; flex-direction: column; justify-content: center; }</pre>
+
+  <h2>2 · Turn scrolling into one number</h2>
+  <p>On every scroll, measure how far the section's top has moved up past the screen, and divide by how far it <em>can</em> move. You get <code>p</code>: 0 when the chart first pins, 1 when it lets go.</p>
+<pre><span class="k">const</span> clamp = (v, a = 0, b = 1) =&gt; Math.max(a, Math.min(b, v));
+
+<span class="k">function</span> progress(section) {
+  <span class="k">const</span> r = section.getBoundingClientRect();
+  <span class="k">return</span> clamp(-r.top / (r.height - innerHeight));
+}
+
+<span class="c">// redraw at most once per frame, however fast people scroll</span>
+<span class="k">let</span> raf = 0;
+addEventListener('scroll', () =&gt; {
+  <span class="k">if</span> (!raf) raf = requestAnimationFrame(() =&gt; { raf = 0; update(); });
+}, { passive: true });</pre>
+
+  <h2>3 · Write the script as slices of p</h2>
+  <p>This is where the storytelling happens. A tiny helper, <code>seg(p, start, end)</code>, turns one slice of the scroll into its own 0→1 for a single step. The blank gaps in the bar above are deliberate pauses, so the reader can take in each state before the next change.</p>
+<pre><span class="k">const</span> seg = (p, a, b) =&gt; clamp((p - a) / (b - a));
+
+<span class="k">function</span> update() {
+  <span class="k">const</span> p = progress(section);
+  S.axes  = seg(p, 0.00, 0.10);   <span class="c">// the line grows</span>
+  S.dots  = Math.round(seg(p, 0.10, 0.35) * ITEMS.length); <span class="c">// dots appear one by one</span>
+  S.rise  = seg(p, 0.40, 0.75);   <span class="c">// pause, then the boring ones climb</span>
+  S.note  = seg(p, 0.82, 1.00);   <span class="c">// the circle scribbles itself</span>
+  apply();                        <span class="c">// push S onto the drawing</span>
+}</pre>
+  <p>Keep two jobs apart. <code>draw()</code> builds the whole chart once (and again when the width changes). <code>apply()</code> only moves and toggles what's already there, so scrolling stays smooth.</p>
+
+  <h2>4 · Draw with a sketchy pen</h2>
+  <p>Rough.js has the same shapes as plain SVG (<code>line</code>, <code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>path</code>), but with a hand-drawn wobble. Play with the settings below. The <b>seed</b> matters: with a fixed seed, a shape wobbles the same way every time it's redrawn. Without one, the chart would jitter on every resize.</p>
+
+  <div class="figure">
+    <svg id="playSvg" viewBox="0 0 560 210" aria-label="Rough.js playground: a bar chart, a circle and an arrow drawn with the chosen settings" role="img"></svg>
+    <div class="controls">
+      <label for="rRough">roughness <output id="oRough">1.2</output><input id="rRough" type="range" min="0" max="4" step=".1" value="1.2"></label>
+      <label for="rBow">bowing <output id="oBow">1.5</output><input id="rBow" type="range" min="0" max="8" step=".5" value="1.5"></label>
+      <label for="rSeed">seed <output id="oSeed">7</output><input id="rSeed" type="range" min="1" max="60" step="1" value="7"></label>
+      <label for="rFill">fillStyle<select id="rFill"><option>hachure</option><option>solid</option><option>zigzag</option><option>cross-hatch</option><option>dots</option><option>dashed</option></select></label>
+    </div>
+  </div>
+<pre id="playCode"></pre>
+
+  <h2>5 · Three reveal tricks</h2>
+  <p>Scroll is really just a slider, so here's a slider. Drag it and watch three tricks run off the same number.</p>
+  <div class="figure">
+    <svg id="trickSvg" viewBox="0 0 560 200" role="img" aria-label="Three reveal tricks driven by one slider: a line that grows, a circle that scribbles itself in, and a dot that rises and changes its label"></svg>
+    <div class="controls" style="grid-template-columns:1fr">
+      <label for="trickP">p = <output id="trickOut">0.50</output><input id="trickP" type="range" min="0" max="1" step=".005" value=".5"></label>
+    </div>
+  </div>
+  <div class="two">
+<pre><span class="c">// A · grow a line: clip it</span>
+&lt;clipPath id="reveal"&gt;
+  &lt;rect width="0" height="999"/&gt;
+&lt;/clipPath&gt;
+clipRect.setAttribute('width',
+  k * fullWidth);</pre>
+<pre><span class="c">// B · scribble a shape in</span>
+path.style.strokeDasharray = len;
+path.style.strokeDashoffset =
+  len * (1 - k);
+<span class="c">// len = path.getTotalLength()</span></pre>
+  </div>
+<pre><span class="c">// C · move, then swap the label with a CSS class (CSS does the fade)</span>
+<span class="k">const</span> ease = k =&gt; k * k * (3 - 2 * k);           <span class="c">// slow start, slow end</span>
+dot.setAttribute('transform', `translate(0 ${(yTo - yFrom) * ease(k)})`);
+dot.classList.toggle('named', k &gt; 0);</pre>
+
+  <h2>Getting it into your newsletter</h2>
+  <p>Email apps strip out scripts, so do what Ben did: put the live version on a web page, and in the email use a GIF of each chart that links to it.</p>
+  <ol class="steps">
+    <li><div><b>Host the page.</b> On WordPress, a page with one <i>Custom HTML</i> block holding the whole file works. A blank page template is best, so the theme's sidebar doesn't squeeze the chart.</div></li>
+    <li><div><b>Record each chart.</b> On a Mac, press <code>⌘ Shift 5</code>, choose "Record Selected Portion", draw a box around the chart, and scroll through it slowly.</div></li>
+    <li><div><b>Make the GIF.</b> Ben's are 1100px wide. This makes a sharp, small file from the recording:
+<pre>ffmpeg -i chart.mov -vf "fps=15,scale=1100:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse" -loop 0 chart.gif</pre>
+      Try to keep each file under about 3 MB so it loads quickly in Gmail and Outlook. Trim slow stretches or drop to <code>fps=12</code> if it's too big.</div></li>
+    <li><div><b>Link the image to the page</b>, and add a line like Ben's: "it's just not the same in the email".</div></li>
+  </ol>
+
+  <h2>Make your own with Claude</h2>
+  <p>You don't need to hand-write any of this. Sketch the chart on paper first (Ben's code mentions "positions from Ben's sketch"), then give Claude a brief like this one, filled in with your own story:</p>
+  <div class="copyblock">
+    <button class="copy" data-copy="promptText" type="button">Copy prompt</button>
+<pre class="prompt" id="promptText">Build a single self-contained HTML page with one scroll-driven, hand-drawn chart.
+
+Style
+- Rough.js (from cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js) for all lines and shapes, each shape with a fixed seed so it never jitters on resize.
+- "Shantell Sans" for chart text and "Inter" for body text, from Google Fonts.
+- Mostly ink on white, one accent colour for the thing that matters, a marker highlight for key words. Works in dark mode too.
+
+Mechanics
+- The chart sits in a section 450vh tall, pinned with position: sticky.
+- Work out scroll progress p (0 to 1) through the section, and use seg(p, start, end) slices to drive each step.
+- draw() builds the SVG on load and on resize; apply() only moves and toggles things on scroll, using requestAnimationFrame.
+- Leave short pauses between steps.
+
+The story (my sketch)
+- X axis: [what goes across]. Y axis: [what goes up].
+- Step 1: draw the axes and [a reference line, e.g. "line of expected payoff"].
+- Step 2: plot these items one by one: [name, x 0–1, y 0–1] …
+- Step 3: [what moves or changes, and where it ends up].
+- Step 4: circle [the point] with a handwritten note: "[your punchline]".
+
+Also add a short caption under the chart that changes with each step, and an aria-label that describes the whole chart.</pre>
+  </div>
+
+  <h3>Or start from this blank template</h3>
+  <p>One file, about 70 lines: a pinned chart that grows a line, drops in three dots and lifts one of them. Save it as <code>chart.html</code>, open it in a browser, then change the story.</p>
+  <div class="copyblock">
+    <button class="copy" data-copy="starter" type="button">Copy template</button>
+    <pre id="starter"></pre>
+  </div>
+
+  <p class="foot">Teardown of Ben Tossell's <a href="https://sessions.bensbites.com/ramp" target="_blank" rel="noopener">"Ramp has taste"</a> page (10 Nov 2026). The AI-projects chart and all the code on this page are new examples written for teaching. The chart positions are illustrative, not survey data.</p>
+</div>
+</main>
+
+<script type="text/plain" id="starterSrc"><!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My scroll chart</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter&family=Shantell+Sans&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"><\/script>
+<style>
+  body{margin:0;font:16px/1.6 Inter,sans-serif;color:#222}
+  .col{max-width:60ch;margin:0 auto;padding:40px 16px}
+  .scrolly{height:450vh;position:relative}
+  .pin{position:sticky;top:0;height:100vh;display:flex;align-items:center;justify-content:center}
+  svg text{font-family:"Shantell Sans",cursive}
+  .it{opacity:0;transition:opacity .25s} .it.on{opacity:1}
+</style></head><body>
+<div class="col"><h1>My story</h1><p>Scroll down.</p></div>
+<section class="scrolly" id="s"><div class="pin"><svg id="c" width="600" height="400" viewBox="0 0 600 400"></svg></div></section>
+<div class="col"><p>The end.</p></div>
+<script>
+const svg = document.getElementById('c'), sec = document.getElementById('s');
+const rc = rough.svg(svg);
+const NS = 'http://www.w3.org/2000/svg';
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = k => k * k * (3 - 2 * k);
+const X = v => 50 + v * 500, Y = v => 350 - v * 300;
+
+// axes
+svg.appendChild(rc.line(50, 350, 560, 350, { seed: 1 }));
+svg.appendChild(rc.line(50, 350, 50, 30, { seed: 2 }));
+
+// a line that grows (clipped)
+svg.insertAdjacentHTML('beforeend', '<defs><clipPath id="cl"><rect id="clr" x="0" y="0" width="0" height="400"/></clipPath></defs>');
+const line = rc.line(X(0), Y(0), X(1), Y(.9), { stroke: '#cf4a24', strokeLineDash: [7, 6], seed: 3 });
+line.setAttribute('clip-path', 'url(#cl)'); svg.appendChild(line);
+
+// dots: name, x, y, and where it rises to
+const ITEMS = [['Idea A', .2, .18, .8], ['Idea B', .5, .45], ['Idea C', .8, .72]];
+const dots = ITEMS.map(([name, x, y], i) => {
+  const g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'it');
+  g.appendChild(rc.circle(X(x), Y(y), 12, { fill: '#2a55c9', fillStyle: 'solid', stroke: '#2a55c9', seed: 10 + i }));
+  const t = document.createElementNS(NS, 'text'); t.setAttribute('x', X(x) + 12); t.setAttribute('y', Y(y) + 5); t.textContent = name;
+  g.appendChild(t); svg.appendChild(g); return g;
+});
+
+function update() {
+  const r = sec.getBoundingClientRect();
+  const p = clamp(-r.top / (r.height - innerHeight));
+  document.getElementById('clr').setAttribute('width', seg(p, 0, .15) * 600);
+  const shown = Math.round(seg(p, .15, .45) * ITEMS.length);
+  dots.forEach((g, i) => g.classList.toggle('on', i < shown));
+  const k = ease(seg(p, .55, .85)), [, , y, to] = ITEMS[0];
+  dots[0].setAttribute('transform', `translate(0 ${(Y(to) - Y(y)) * k})`);
+}
+let raf = 0;
+addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; update(); }); }, { passive: true });
+update();
+<\/script>
+</body></html></script>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const el = (n, a, p) => { const e = document.createElementNS(NS, n); if (a) for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+const txt = (g, x, y, s, o = {}) => {
+  const t = el('text', { x, y, 'text-anchor': o.anchor || 'start', 'font-size': o.size || 14 }, g);
+  if (o.cls) t.setAttribute('class', o.cls);
+  if (o.rot) t.setAttribute('transform', `rotate(${o.rot} ${x} ${y})`);
+  t.textContent = s; return t;
+};
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = k => k * k * (3 - 2 * k);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hasRough = typeof rough !== 'undefined';
+
+/* ================= the scroll story ================= */
+// x: effort to build, y: value to the business. Both 0..1, illustrative.
+const lineY = x => .9 * x;
+const ITEMS = [
+  { n: 'meeting notes',        x: .07, to: .50 },
+  { n: 'invoice matching',     x: .15, to: .80 },
+  { n: 'sales email drafts',   x: .23, to: .62 },
+  { n: 'contract review',      x: .31, to: .90 },
+  { n: 'AI strategy deck',     x: .45 },
+  { n: 'website chatbot',      x: .64 },
+  { n: 'custom agent platform',x: .86 },
+];
+const CAPS = [
+  [0,    'STEP 0', 'Scroll down to start drawing.'],
+  [.001, 'STEP 1 · AXES', 'Most people expect AI to pay off in line with effort: a bigger build, a bigger return.'],
+  [.10,  'STEP 2 · PLOT', 'So the projects get lined up on that line, from quick wins to big builds.'],
+  [.36,  'PAUSE', 'Take a second to read the chart before it changes.'],
+  [.40,  'STEP 3 · RISE', 'Then the plain, everyday jobs climb far above the line.'],
+  [.76,  'PAUSE', 'The flashy builds stay where they were.'],
+  [.82,  'STEP 4 · NOTE', 'Boring jobs that happen every day are where the value is.'],
+];
+
+const sec = document.getElementById('story');
+const host = document.getElementById('storyHost');
+const cap = document.getElementById('caption');
+const needle = document.getElementById('needle');
+const pOut = document.getElementById('pOut');
+const barSpans = [...document.querySelectorAll('#bar span')];
+const BOUNDS = [0, .10, .35, .40, .75, .82, 1];
+const svg = el('svg', { class: 'ch' }, host);
+const S = { line: 0, dots: 0, rise: 0, note: 0 };
+let G = null, lastW = 0, lastCap = -1;
+
+function draw() {
+  const W = Math.round(host.clientWidth); if (!W || !hasRough) return;
+  lastW = W; svg.innerHTML = '';
+  const mob = W < 560;
+  const vh = innerHeight || 700;
+  const H = Math.round(clamp(Math.min(W * .68, vh - 190), 300, 470));
+  const L = 28, R = mob ? 8 : 16, T = 14, B = 44;
+  const X = v => L + 10 + v * (W - L - R - 20);
+  const Y = v => H - B - 10 - v * (H - B - T - 26);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', W); svg.setAttribute('height', H);
+  const rc = rough.svg(svg, { options: { disableMultiStroke: true } });
+  let seed = 11; const sd = () => (seed += 7);
+  const pen = { stroke: 'currentColor' };
+  const fs = mob ? 12 : 13.5;
+
+  // axes, always visible
+  const ax = el('g', { class: 'c-ink' }, svg);
+  ax.appendChild(rc.line(L, H - B, W - R, H - B, { ...pen, strokeWidth: 1.8, roughness: 1, seed: sd() }));
+  ax.appendChild(rc.linearPath([[W - R - 9, H - B - 6], [W - R, H - B], [W - R - 9, H - B + 6]], { ...pen, strokeWidth: 1.8, roughness: .6, seed: sd() }));
+  ax.appendChild(rc.line(L, H - B, L, T - 6, { ...pen, strokeWidth: 1.8, roughness: 1, seed: sd() }));
+  ax.appendChild(rc.linearPath([[L - 6, T + 3], [L, T - 6], [L + 6, T + 3]], { ...pen, strokeWidth: 1.8, roughness: .6, seed: sd() }));
+  const al = el('g', { class: 'axl' }, svg);
+  txt(al, (L + W - R) / 2, H - B + 28, 'effort to build →', { anchor: 'middle', size: mob ? 13 : 14.5 });
+  txt(al, L - 10, (T + H - B) / 2, 'value to the business →', { anchor: 'middle', size: mob ? 13 : 14.5, rot: -90 });
+
+  // the dashed line, revealed by a growing clip rectangle
+  const defs = el('defs', null, svg);
+  const cp = el('clipPath', { id: 'storyClip' }, defs);
+  const clip = el('rect', { x: 0, y: -40, width: 0, height: H + 80 }, cp);
+  const lg = el('g', { class: 'c-pencil', 'clip-path': 'url(#storyClip)' }, svg);
+  const a = [X(0), Y(0)], b = [X(1), Y(lineY(1))];
+  lg.appendChild(rc.line(a[0], a[1], b[0], b[1], { ...pen, strokeWidth: 2, roughness: 1.3, bowing: 2, strokeLineDash: [7, 6], seed: sd() }));
+  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
+  const lab = el('g', { class: 'lab c-pencil halo' }, svg);
+  { const lx = .55, n = ang * Math.PI / 180, off = 13, cx = X(lx), cy = Y(lineY(lx));
+    txt(lab, cx + Math.sin(n) * off, cy - Math.cos(n) * off, 'line of expected payoff', { anchor: 'middle', size: mob ? 12.5 : 14, rot: ang }); }
+
+  // trails sit under the dots
+  const trails = el('g', null, svg);
+  const items = ITEMS.map(it => {
+    const x = X(it.x), y0 = Y(lineY(it.x)), y1 = it.to != null ? Y(it.to) : y0;
+    const trail = el('path', { class: 'trail', d: '' }, trails);
+    const g = el('g', { class: 'it c-ink' }, svg);
+    const mv = el('g', null, g);
+    mv.appendChild(rc.circle(x, y0, mob ? 9 : 10, { ...pen, fill: 'currentColor', fillStyle: 'solid', strokeWidth: 1, roughness: .6, seed: sd() }));
+    txt(mv, x + 9, y0 + 4.5, it.n, { size: fs });
+    return { it, g, mv, trail, x, y0, y1 };
+  });
+
+  // the closing note: a scribbled ellipse round the risers, and a handwritten line
+  const risers = items.filter(o => o.it.to != null);
+  const xs = risers.map(o => o.x), ys = risers.map(o => o.y1);
+  // the ellipse leans right to take in the labels, and is padded so it clears every dot
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2 + (mob ? 38 : 52);
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const ew = Math.max(...xs) - Math.min(...xs) + (mob ? 190 : 250), eh = Math.max(...ys) - Math.min(...ys) + (mob ? 70 : 84);
+  const note = el('g', { class: 'note c-biro' }, svg);
+  const ell = rc.ellipse(cx, cy, ew, eh, { ...pen, strokeWidth: 1.8, roughness: 1.6, seed: sd() });
+  note.appendChild(ell);
+  // the note goes in the empty top-middle of the chart, with an arrow back to the ellipse's right edge
+  const fsN = mob ? 14 : 16, tw = mob ? 120 : 140;
+  const ex = cx + ew / 2 - 4, ey = cy - eh * .12;
+  const tx = Math.min(ex + (mob ? 22 : 40), W - R - tw), ty = Math.max(T + 18, cy - eh / 2 + 8);
+  const arrow = rc.curve([[tx - 4, ty + 2], [ex + 10, ty + 4], [ex + 2, ey]], { ...pen, strokeWidth: 1.5, roughness: 1, seed: sd() });
+  note.appendChild(arrow);
+  const noteTxt = el('g', { class: 'lab c-biro halo' }, svg);
+  txt(noteTxt, tx, ty, 'boring, daily jobs', { size: fsN });
+  txt(noteTxt, tx, ty + fsN * 1.2, '= real value', { size: fsN });
+  const scribble = [...note.querySelectorAll('path')].map(p => {
+    let len = 0; try { len = p.getTotalLength(); } catch (e) { len = 0; }
+    p.style.strokeDasharray = len; p.style.strokeDashoffset = len; return { p, len };
+  });
+
+  G = { clip, lab, items, b, scribble, noteTxt };
+  apply();
+}
+
+function apply() {
+  if (!G) return;
+  G.clip.setAttribute('width', S.line * (G.b[0] + 30));
+  G.lab.classList.toggle('on', S.line >= 1);
+  G.items.forEach((o, i) => {
+    o.g.classList.toggle('on', i < S.dots);
+    if (o.it.to == null) return;
+    // each riser starts a little after the one before, so they climb in turn
+    const j = G.items.filter(q => q.it.to != null).indexOf(o);
+    const k = ease(clamp((S.rise - j * .12) / .64));
+    o.mv.setAttribute('transform', `translate(0 ${(o.y1 - o.y0) * k})`);
+    o.g.classList.toggle('c-biro', k > 0); o.g.classList.toggle('c-ink', k <= 0);
+    o.trail.setAttribute('d', k > 0 ? `M${o.x} ${o.y0}V${o.y0 + (o.y1 - o.y0) * k + 8}` : '');
+  });
+  G.scribble.forEach(({ p, len }) => { p.style.strokeDashoffset = len * (1 - S.note); });
+  G.noteTxt.classList.toggle('on', S.note > .6);
+}
+
+function setP(p) {
+  S.line = seg(p, 0, .10);
+  S.dots = Math.round(seg(p, .10, .35) * ITEMS.length);
+  S.rise = seg(p, .40, .75);
+  S.note = seg(p, .82, 1);
+  apply();
+  needle.style.left = `calc(${(p * 100).toFixed(2)}% - 1px)`;
+  pOut.textContent = p.toFixed(2);
+  let act = -1; for (let i = 0; i < BOUNDS.length - 1; i++) if (p > BOUNDS[i] && p <= BOUNDS[i + 1]) act = i;
+  barSpans.forEach((s, i) => s.classList.toggle('act', i === act));
+  let c = 0; CAPS.forEach((row, i) => { if (p >= row[0]) c = i; });
+  if (c !== lastCap) { lastCap = c; cap.innerHTML = `<span class="step">${CAPS[c][1]}</span>${CAPS[c][2]}`; }
+}
+function update() {
+  const r = sec.getBoundingClientRect();
+  setP(clamp(-r.top / Math.max(1, r.height - innerHeight)));
+}
+let raf = 0;
+const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; update(); }); };
+addEventListener('scroll', onScroll, { passive: true });
+addEventListener('resize', onScroll);
+new ResizeObserver(() => { if (Math.round(host.clientWidth) !== lastW) { draw(); update(); } }).observe(host);
+draw(); update();
+if (document.fonts) document.fonts.ready.then(() => { draw(); update(); });
+
+/* ================= Rough.js playground ================= */
+const pSvg = document.getElementById('playSvg');
+const ctl = { rough: document.getElementById('rRough'), bow: document.getElementById('rBow'), seed: document.getElementById('rSeed'), fill: document.getElementById('rFill') };
+const out = { rough: document.getElementById('oRough'), bow: document.getElementById('oBow'), seed: document.getElementById('oSeed') };
+const codeEl = document.getElementById('playCode');
+function play() {
+  if (!hasRough) return;
+  const o = { roughness: +ctl.rough.value, bowing: +ctl.bow.value, seed: +ctl.seed.value, fillStyle: ctl.fill.value };
+  out.rough.textContent = o.roughness.toFixed(1); out.bow.textContent = o.bowing.toFixed(1); out.seed.textContent = o.seed;
+  pSvg.innerHTML = '';
+  const rc = rough.svg(pSvg);
+  const ink = el('g', { class: 'c-ink' }, pSvg), blue = el('g', { class: 'c-biro' }, pSvg), red = el('g', { class: 'c-pencil' }, pSvg);
+  const base = { ...o, stroke: 'currentColor', fill: 'currentColor', strokeWidth: 1.6, hachureGap: 6, fillWeight: 1.2 };
+  ink.appendChild(rc.line(20, 180, 300, 180, { ...o, stroke: 'currentColor', strokeWidth: 1.8 }));
+  [[40, 90], [110, 60], [180, 120], [250, 30]].forEach(([x, h], i) =>
+    (i === 3 ? blue : ink).appendChild(rc.rectangle(x - 22, 180 - h - 30, 44, h + 30, { ...base, seed: o.seed + i })));
+  blue.appendChild(rc.circle(410, 92, 110, { ...base, seed: o.seed + 9 }));
+  red.appendChild(rc.curve([[360, 190], [420, 168], [500, 186], [540, 160]], { ...o, stroke: 'currentColor', strokeWidth: 2, seed: o.seed + 4 }));
+  red.appendChild(rc.linearPath([[528, 156], [540, 160], [532, 172]], { ...o, stroke: 'currentColor', strokeWidth: 2, seed: o.seed + 5 }));
+  codeEl.innerHTML =
+`<span class="k">const</span> rc = rough.svg(svg);
+svg.appendChild(rc.rectangle(x, y, w, h, {
+  roughness: ${o.roughness.toFixed(1)}, bowing: ${o.bowing.toFixed(1)}, seed: ${o.seed},
+  fill: 'currentColor', fillStyle: '${o.fillStyle}', stroke: 'currentColor'
+}));
+<span class="c">// colour comes from CSS: a parent &lt;g class="c-biro"&gt; sets currentColor</span>`;
+}
+Object.values(ctl).forEach(c => c.addEventListener('input', play));
+play();
+
+/* ================= reveal tricks ================= */
+const tSvg = document.getElementById('trickSvg');
+const tIn = document.getElementById('trickP'), tOut = document.getElementById('trickOut');
+let T = null;
+function trickDraw() {
+  if (!hasRough) return;
+  tSvg.innerHTML = '';
+  const rc = rough.svg(tSvg, { options: { disableMultiStroke: true } });
+  const lab = el('g', { class: 'axl' }, tSvg);
+  // A
+  const defs = el('defs', null, tSvg), cp = el('clipPath', { id: 'tClip' }, defs);
+  const clip = el('rect', { x: 0, y: 0, width: 0, height: 200 }, cp);
+  const gA = el('g', { class: 'c-pencil', 'clip-path': 'url(#tClip)' }, tSvg);
+  gA.appendChild(rc.line(20, 150, 170, 50, { stroke: 'currentColor', strokeWidth: 2.2, strokeLineDash: [7, 6], roughness: 1.2, seed: 3 }));
+  txt(lab, 95, 190, 'A · clip grows', { anchor: 'middle', size: 14 });
+  // B
+  const gB = el('g', { class: 'c-biro' }, tSvg);
+  gB.appendChild(rc.ellipse(280, 100, 130, 92, { stroke: 'currentColor', strokeWidth: 2, roughness: 1.6, seed: 8 }));
+  const halo = el('g', { class: 'halo c-ink' }, tSvg);
+  txt(halo, 280, 106, 'the point', { anchor: 'middle', size: 16 });
+  const paths = [...gB.querySelectorAll('path')].map(p => { const len = p.getTotalLength(); p.style.strokeDasharray = len; return { p, len }; });
+  txt(lab, 280, 190, 'B · dash offset', { anchor: 'middle', size: 14 });
+  // C
+  el('path', { d: 'M470 150V40', class: 'trail' }, tSvg);
+  const gC = el('g', { class: 'c-ink' }, tSvg), mv = el('g', null, gC);
+  mv.appendChild(rc.circle(470, 150, 12, { stroke: 'currentColor', fill: 'currentColor', fillStyle: 'solid', roughness: .6, seed: 5 }));
+  const halo2 = el('g', { class: 'halo' }, mv);
+  const t1 = txt(halo2, 482, 155, 'a task', { size: 14 }), t2 = txt(halo2, 482, 155, 'a business!', { size: 14 });
+  txt(lab, 470, 190, 'C · ease + swap', { anchor: 'middle', size: 14 });
+  T = { clip, paths, mv, gC, t1, t2 };
+}
+function trickApply() {
+  if (!T) return;
+  const p = +tIn.value; tOut.textContent = p.toFixed(2);
+  T.clip.setAttribute('width', 20 + seg(p, 0, .4) * 160);
+  T.paths.forEach(({ p: path, len }) => { path.style.strokeDashoffset = len * (1 - seg(p, .25, .7)); });
+  const k = ease(seg(p, .55, 1));
+  T.mv.setAttribute('transform', `translate(0 ${-110 * k})`);
+  T.gC.setAttribute('class', k > 0 ? 'c-biro' : 'c-ink');
+  T.t1.style.opacity = k > 0 ? 0 : 1; T.t2.style.opacity = k > 0 ? 1 : 0;
+}
+tIn.addEventListener('input', trickApply);
+trickDraw(); trickApply();
+if (document.fonts) document.fonts.ready.then(() => { trickDraw(); trickApply(); });
+
+/* ================= template + copy buttons ================= */
+document.getElementById('starter').textContent =
+  document.getElementById('starterSrc').textContent.replace(/<\\\/script>/g, '</' + 'script>').trim();
+document.querySelectorAll('.copy').forEach(btn => btn.addEventListener('click', () => {
+  const src = document.getElementById(btn.dataset.copy);
+  const text = src.textContent;
+  const done = ok => { btn.textContent = ok ? 'Copied' : 'Text selected: press ⌘C'; setTimeout(() => { btn.textContent = btn.dataset.copy === 'starter' ? 'Copy template' : 'Copy prompt'; }, 2200); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents(src); const s = getSelection(); s.removeAllRanges(); s.addRange(r); done(false); };
+  try { navigator.clipboard.writeText(text).then(() => done(true), fallback); } catch (e) { fallback(); }
+}));
+})();
+</script>

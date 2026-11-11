@@ -1,0 +1,72 @@
+/* Scroll Sketch v1.0 · hand-drawn, scroll-driven charts · MIT licence
+   Theme tokens first. To restyle, override these variables (see themes/), not the rules below.
+   --accent is for shapes (lines, dots, outlines). Text stays in --ink or --muted so it always reads. */
+:root{
+  --ground:#fafaf7;   /* page */
+  --block:#ffffff;    /* box fill */
+  --ink:#1d1d1f;      /* text, main lines */
+  --muted:#646469;    /* secondary text, axis labels */
+  --accent:#2f5bd3;   /* the thing that matters: shapes only */
+  --accent-2:#d4552b; /* a reference line or a second series */
+  --hatch:#a3a3a8;    /* hatching, dimmed marks */
+  --hair:#dedcd6;     /* rules */
+  --sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --hand:"Shantell Sans","Segoe Print","Comic Neue",cursive;
+  --measure:62ch;
+  --ease:cubic-bezier(.23,1,.32,1);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#141518; --block:#1c1d21; --ink:#eeede9; --muted:#a3a29d;
+  --accent:#86a5ff; --accent-2:#f08a62; --hatch:#5f6068; --hair:#2e2f35; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --ground:#141518; --block:#1c1d21; --ink:#eeede9; --muted:#a3a29d;
+  --accent:#86a5ff; --accent-2:#f08a62; --hatch:#5f6068; --hair:#2e2f35; color-scheme:dark;
+}
+
+/* ---------- article ---------- */
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 17px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
+main{padding-block:56px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.col{max-width:var(--measure);margin:0 auto}
+h1,h2{margin:0;color:var(--ink);text-wrap:balance}
+h1{font:700 clamp(30px,6vw,44px)/1.1 var(--sans);letter-spacing:-.015em;margin:6px 0 16px}
+h2{font:600 22px/1.25 var(--sans);padding-top:48px;margin-bottom:6px}
+p{margin:12px 0;text-wrap:pretty}
+.meta{font:400 13px/1.4 var(--sans);color:var(--muted);letter-spacing:.02em}
+.meta b{font-weight:600;color:var(--ink)}
+.lede{font-size:19px}
+.note{font-size:13px;color:var(--muted);text-align:center;max-width:60ch;margin:-4px auto 0}
+a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--accent);text-decoration-thickness:2px;text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px}
+
+/* ---------- the pinned stage ---------- */
+/* set the scroll length per chart with style="--len:440" (in viewport heights; 400–600 reads well) */
+.scrolly{position:relative;height:calc(var(--len,440) * 1vh);height:calc(var(--len,440) * 1svh);margin:24px 0}
+.pin{position:sticky;top:0;height:100vh;height:100svh;display:flex;flex-direction:column;justify-content:center;gap:12px}
+.stage{max-width:780px;width:100%;margin:0 auto}
+.host{position:relative;width:100%}
+.caption{max-width:52ch;margin:0 auto;min-height:3.3em;text-align:center;font:400 15px/1.5 var(--sans);color:var(--ink)}
+
+/* ---------- inside the chart ---------- */
+.ch{display:block;overflow:visible;max-width:100%}
+.ch text{font-family:var(--hand)}
+.c-ink{color:var(--ink)} .c-muted{color:var(--muted)} .c-accent{color:var(--accent)} .c-alt{color:var(--accent-2)} .c-hatch{color:var(--hatch)}
+.ch text.ink{fill:var(--ink)} .ch text.mut{fill:var(--muted)}
+/* a halo in the page colour keeps hand-written labels readable over lines */
+.ch .halo text{paint-order:stroke;stroke:var(--ground);stroke-width:5px;stroke-linejoin:round}
+.ch .axl text{fill:var(--muted)}
+/* .it: an item that fades in when switched .on; .lab: same, for labels */
+.ch .it,.ch .lab{opacity:0;transition:opacity 260ms var(--ease)}
+.ch .it.on,.ch .lab.on{opacity:1}
+/* .sw: text that swaps with another in the same spot */
+.ch .sw{transition:opacity 220ms var(--ease)} .ch .sw.off{opacity:0}
+.ch .dim{opacity:.22!important}
+.ch .bfill{fill:var(--block)}
+.ch .bx text{fill:var(--ink);stroke:none}
+.ch .head{opacity:0;transition:opacity 160ms var(--ease)} .ch .head.on{opacity:1}
+.ch .trail{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-dasharray:1.5 5;stroke-linecap:round}
+.ch .lead{stroke:var(--hatch);stroke-width:1.2;stroke-dasharray:2 4}
+.ch .dot{transition:color 240ms var(--ease)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}

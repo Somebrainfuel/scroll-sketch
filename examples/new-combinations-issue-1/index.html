@@ -1,0 +1,493 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Big Yeses, Made Small</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Shantell+Sans:wght@400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<style>
+/* Layout: one reading column; each chart pins full-screen inside a tall section while the reader scrolls.
+   Palette from the Business Design Labs system: warm paper, white blocks, near-black ink,
+   brand orange on shapes only (never text). Charts are hand-drawn: Rough.js lines, Shantell Sans labels. */
+:root{
+  --ground:#f2efe8; --block:#ffffff; --border:#5e5952; --ink:#1c1a18; --muted:#5e5952;
+  --orange:#dc6f42; --link:#a24814; --hair:#d9d4ca; --hatch:#a69f94;
+  --sans:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --hand:"Shantell Sans","Segoe Print","Comic Neue",cursive;
+  --measure:62ch; --ease:cubic-bezier(.23,1,.32,1);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#131c2b; --block:#1c2739; --border:#a3abb8; --ink:#f2efe8; --muted:#a3abb8;
+  --orange:#dc6f42; --link:#f0a27e; --hair:#2b3851; --hatch:#5f6b80; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --ground:#131c2b; --block:#1c2739; --border:#a3abb8; --ink:#f2efe8; --muted:#a3abb8;
+  --orange:#dc6f42; --link:#f0a27e; --hair:#2b3851; --hatch:#5f6b80; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 17px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
+main{padding-block:56px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.col{max-width:var(--measure);margin:0 auto}
+h1,h2{margin:0;text-wrap:balance;color:var(--ink)}
+h1{font:700 clamp(32px,6vw,46px)/1.08 var(--sans);letter-spacing:-.015em;margin:6px 0 18px}
+h2{font:600 22px/1.25 var(--sans);padding-top:56px;margin-bottom:6px}
+p{margin:12px 0;text-wrap:pretty}
+.meta{font:400 13px/1.4 var(--sans);color:var(--muted);letter-spacing:.02em}
+.meta b{font-weight:600;color:var(--ink)}
+.lede{font-size:19px}
+a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--orange);text-decoration-thickness:2px;text-underline-offset:3px}
+a:hover{color:var(--link)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px}
+.biz{font-weight:600}
+.kicker{display:inline-block;font:600 12px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:40px}
+
+/* scroll stories */
+.scrolly{position:relative;height:440vh;height:440svh;margin:20px 0}
+#s-holo.scrolly{height:380vh;height:380svh}
+#s-ikea.scrolly{height:460vh;height:460svh}
+.pin{position:sticky;top:0;height:100vh;height:100svh;display:flex;flex-direction:column;justify-content:center;gap:12px}
+.stage{max-width:780px;width:100%;margin:0 auto}
+.host{position:relative;width:100%}
+.ch{display:block;overflow:visible;max-width:100%}
+.ch text{font-family:var(--hand)}
+.caption{max-width:52ch;margin:0 auto;min-height:3.3em;text-align:center;font:400 15px/1.5 var(--sans);color:var(--ink)}
+.c-ink{color:var(--ink)} .c-muted{color:var(--muted)} .c-orange{color:var(--orange)} .c-hatch{color:var(--hatch)}
+.ch .halo text,.ch .lb text{paint-order:stroke;stroke:var(--ground);stroke-width:5px;stroke-linejoin:round}
+.ch text.ink{fill:var(--ink)} .ch text.mut{fill:var(--muted)}
+.ch .axl text{fill:var(--muted)}
+.ch .it{opacity:0;transition:opacity 260ms var(--ease)} .ch .it.on{opacity:1}
+.ch .lab{opacity:0;transition:opacity 260ms var(--ease)} .ch .lab.on{opacity:1}
+.ch .sw{transition:opacity 220ms var(--ease)} .ch .sw.off{opacity:0}
+.ch .dim{opacity:.22!important}
+.ch .bfill{fill:var(--block)}
+.ch .bx text{fill:var(--ink);stroke:none}
+.ch .head{opacity:0;transition:opacity 160ms var(--ease)} .ch .head.on{opacity:1}
+.ch .trail{fill:none;stroke:var(--orange);stroke-width:1.6;stroke-dasharray:1.5 5;stroke-linecap:round}
+.ch .lead{stroke:var(--hatch);stroke-width:1.2;stroke-dasharray:2 4}
+.ch .dot{transition:color 240ms var(--ease)}
+.note{font-size:13px;color:var(--muted);text-align:center;margin:-4px auto 0;max-width:60ch}
+
+blockquote{margin:28px 0;padding:18px 20px;background:var(--block);border:1.5px solid var(--border);border-radius:3px;font:400 19px/1.5 var(--sans)}
+blockquote .q{display:block;font:600 12px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.dig{display:flex;flex-wrap:wrap;gap:8px 18px;padding:0;list-style:none;margin:10px 0 0}
+.foot{margin-top:56px;padding-top:16px;border-top:1px solid var(--hair);font-size:13px;color:var(--muted)}
+.foot p{margin:6px 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<main>
+<div class="col">
+  <div class="meta"><b>New Combinations</b> · Issue 1 · 26 October 2026 · Gary Fox</div>
+  <h1>Big yeses, made small</h1>
+  <p class="lede">Somewhere now, a small brand owner is looking at a minimum production order of 5,000 units and wondering whether they'll sell. Another is working out whether they can afford to hire someone for marketing.</p>
+  <p>Big yeses are where good ideas stagnate. Here are three businesses trying to make those decisions smaller. Scroll slowly: the charts draw themselves as you go.</p>
+</div>
+
+<section class="scrolly" id="s-yes" aria-label="Chart: the big-yes curve">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="A hand-drawn curve. Across: the size of the first yes, from small to big. Up: how many people say yes now. The curve falls steeply, so big commitments get few yeses, and the area under the right-hand end is shaded and labelled 'not yet'. Three decisions start on the right: a shopper buying new, a small brand committing to 5,000 units, a small business hiring for marketing. One by one they slide left and up the curve as IKEA (second-hand, about 60% less), 120ft (pay per finished product) and Holo (about $21 a month on average) make the first yes smaller. An orange arrow labelled 'a smaller yes' points left."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">The curve is a sketch of the idea, not measured data.</p>
+  <p>These three don't fit one neat theory. 120ft and Holo lower costs and make capabilities more accessible. IKEA is finding a way into transactions that were already happening without it. What they share is <em>combination</em>: buyers with sellers, brands with a shared factory, AI with a firm's own brand.</p>
+  <p>The late Harvard professor Clayton Christensen argued that some of the largest new markets come from people who weren't buying at all. When a decision feels big, customers rarely say no. They just don't decide. Your biggest competitor may be "not yet".</p>
+
+  <span class="kicker">Small business · AI</span>
+  <h2>Holo: a marketing team for about $21 a month</h2>
+  <p>Vilnius startup Holo has <a href="https://tech.eu/2026/10/15/vilnius-based-holo-raises-eur5m-to-bring-ai-powered-marketing-to-small-businesses/" target="_blank" rel="noopener">raised €5 million</a> for an AI service that plans and produces marketing for small businesses: ads, social posts, emails and website content. Its growth is the striking part.</p>
+</div>
+
+<section class="scrolly" id="s-holo" aria-label="Chart: Holo's customers and the average price">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="A grid of 200 hand-drawn dots fills up, each dot standing for 100 paying businesses, until it reads more than 20,000 paying businesses in about eight months. Beside it a handwritten sum: $5,000,000 a year, divided by 12 months, divided by 20,000 businesses, is about $21 per business per month, underlined in orange. One dot is circled: one of them. A note says it's an average, not a price."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p class="note">Figures as <a href="https://www.therecursive.com/lithuanian-holo-raises-eur5m-to-put-small-business-marketing-on-autopilot/" target="_blank" rel="noopener">reported by The Recursive</a>. The $21 is my rough calculation.</p>
+  <p>Think of that as a fully automated marketing production team that can move fast. It gives a small business enormous marketing capability at a fraction of the cost of an agency.</p>
+  <p>There's a catch. In one experiment, writers given ideas by AI produced stories rated as more creative, but about 11% more similar to one another. If thousands of firms use similar AI marketing tools, what makes one stand out? Knowing what's worth saying, rather than producing more.</p>
+
+  <span class="kicker">Big business · circular</span>
+  <h2>IKEA: joining a market that already existed</h2>
+  <p>IKEA has <a href="https://www.ingka.com/newsroom/ikea-to-test-direct-offers-to-sellers-through-its-second-hand-marketplace-as-the-platform-expands-to-the-uk-and-ireland/" target="_blank" rel="noopener">launched its marketplace for used IKEA furniture</a> in the UK and Ireland. Follow one piece of furniture.</p>
+</div>
+
+<section class="scrolly" id="s-ikea" aria-label="Chart: IKEA's second-hand loop">
+  <div class="pin">
+    <figure class="stage"><div class="host" role="img" aria-label="A hand-drawn flow diagram. IKEA sells to a first owner. The first owner already resells to a next owner through eBay and Facebook, without IKEA; IKEA is about 9% of Europe's used home-furnishing market. Then an IKEA second-hand marketplace appears, outlined in orange, and the resale runs through it instead: first owner to marketplace to next owner, who pays around 60% less than new. Sellers get 15% extra as store credit, so money flows back to IKEA. Finally, data on which products hold their value flows from the marketplace back to IKEA."></div></figure>
+    <p class="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<div class="col">
+  <p>My guess is that the bigger prize is information: which products hold their value, and which simply get passed on. With AI to analyse it, IKEA can see which items are resold most and change the design.</p>
+  <p>If what you sell gets resold, refurbished or repaired, a market already exists around it. Someone will run your product's second life. Could it be you?</p>
+
+  <blockquote><span class="q">One question</span>Where do your customers have to make a big yes, a decision that makes them hesitate or postpone, and what would a smaller yes look like?</blockquote>
+
+  <p class="meta"><b>Dig deeper</b></p>
+  <ul class="dig">
+    <li><a href="https://www.garyfox.co/patterns/circular-economy-business-model/" target="_blank" rel="noopener">Circular business models</a></li>
+    <li><a href="https://www.garyfox.co/patterns/pay-per-use/" target="_blank" rel="noopener">Pay per use</a></li>
+    <li><a href="https://www.garyfox.co/ai-value-creation/" target="_blank" rel="noopener">AI value creation</a></li>
+  </ul>
+
+  <div class="foot">
+    <p>New Combinations arrives every fortnight: three businesses, three useful takeouts and three trends worth watching.</p>
+    <p>Sources: <a href="https://www.ingka.com/newsroom/ikea-to-test-direct-offers-to-sellers-through-its-second-hand-marketplace-as-the-platform-expands-to-the-uk-and-ireland/" target="_blank" rel="noopener">Ingka</a> · <a href="https://siliconangle.com/2026/10/15/120ft-raises-angel-funding-to-build-autonomous-microfactories-run-by-humanoid-robots/" target="_blank" rel="noopener">SiliconANGLE</a> · <a href="https://tech.eu/2026/10/15/vilnius-based-holo-raises-eur5m-to-bring-ai-powered-marketing-to-small-businesses/" target="_blank" rel="noopener">tech.eu</a> · <a href="https://www.therecursive.com/lithuanian-holo-raises-eur5m-to-put-small-business-marketing-on-autopilot/" target="_blank" rel="noopener">The Recursive</a> · <a href="https://www.christenseninstitute.org/blog/thursday-theory-tips-on-creating-new-markets/" target="_blank" rel="noopener">Christensen Institute</a> · <a href="https://www.sciencedaily.com/releases/2024/07/240712222127.htm" target="_blank" rel="noopener">ScienceDaily</a></p>
+  </div>
+</div>
+</main>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const el = (n, a, p) => { const e = document.createElementNS(NS, n); if (a) for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+const txt = (g, x, y, s, o = {}) => {
+  const t = el('text', { x, y, 'text-anchor': o.anchor || 'start', 'font-size': o.size || 14 }, g);
+  if (o.cls) t.setAttribute('class', o.cls);
+  if (o.rot) t.setAttribute('transform', `rotate(${o.rot} ${x} ${y})`);
+  t.textContent = s; return t;
+};
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = k => k * k * (3 - 2 * k);
+const hasRough = typeof rough !== 'undefined';
+const size = (svg, W, H) => { svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', W); svg.setAttribute('height', H); };
+const pen = { stroke: 'currentColor' };
+
+// reveal a rough shape by its stroke: returns k => draw k (0..1) of it
+function grow(g) {
+  const ps = [...g.querySelectorAll('path')].map(p => {
+    let len = 0; try { len = p.getTotalLength(); } catch (e) { len = 0; }
+    p.style.strokeDasharray = `${len} ${len}`; p.style.strokeDashoffset = len; return { p, len };
+  });
+  return k => ps.forEach(({ p, len }) => { p.style.strokeDashoffset = len * (1 - k); });
+}
+// a hand-drawn arrow along a gentle curve from a to b
+function arrow(rc, parent, a, b, bend, o = {}) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
+  const n = [-dy / len, dx / len], c = [(a[0] + b[0]) / 2 + n[0] * bend, (a[1] + b[1]) / 2 + n[1] * bend];
+  const q = t => [(1 - t) * (1 - t) * a[0] + 2 * (1 - t) * t * c[0] + t * t * b[0], (1 - t) * (1 - t) * a[1] + 2 * (1 - t) * t * c[1] + t * t * b[1]];
+  const pts = []; for (let i = 0; i <= 10; i++) pts.push(q(i / 10));
+  const g = el('g', { class: o.cls || '' }, parent);
+  const line = el('g', null, g);
+  const w = o.w || 1.8;
+  line.appendChild(rc.curve(pts, { ...pen, strokeWidth: w, roughness: o.rough ?? .8, seed: o.seed || 3, ...(o.dash ? { strokeLineDash: o.dash } : {}) }));
+  const ang = Math.atan2(b[1] - pts[9][1], b[0] - pts[9][0]), hl = o.head || 10;
+  const head = el('g', { class: 'head' }, g);
+  head.appendChild(rc.linearPath([[b[0] - hl * Math.cos(ang - .45), b[1] - hl * Math.sin(ang - .45)], b, [b[0] - hl * Math.cos(ang + .45), b[1] - hl * Math.sin(ang + .45)]], { ...pen, strokeWidth: w, roughness: .4, seed: (o.seed || 3) + 1 }));
+  return { g, line, head, mid: q(.5) };
+}
+// point on a box's edge, facing another point
+function edge(b, t, pad = 4) {
+  const dx = t[0] - b.cx, dy = t[1] - b.cy;
+  const s = Math.min((b.w / 2 + pad) / Math.max(1e-6, Math.abs(dx)), (b.h / 2 + pad) / Math.max(1e-6, Math.abs(dy)));
+  return [b.cx + dx * s, b.cy + dy * s];
+}
+function box(rc, parent, b, lines, o = {}) {
+  const g = el('g', { class: 'bx ' + (o.cls || 'c-ink') }, parent);
+  el('rect', { x: b.cx - b.w / 2, y: b.cy - b.h / 2, width: b.w, height: b.h, rx: 3, class: 'bfill' }, g);
+  g.appendChild(rc.rectangle(b.cx - b.w / 2, b.cy - b.h / 2, b.w, b.h, { ...pen, strokeWidth: o.sw || 1.5, roughness: .9, seed: o.seed || 7 }));
+  const fs = o.fs || 14, lh = fs * 1.2;
+  lines.forEach((s, i) => txt(g, b.cx, b.cy + (i - (lines.length - 1) / 2) * lh + fs * .34, s, { anchor: 'middle', size: fs }));
+  return g;
+}
+function axes(rc, svg, L, R, T, B, W, H, sd) {
+  const ax = el('g', { class: 'c-ink' }, svg);
+  ax.appendChild(rc.line(L, H - B, W - R, H - B, { ...pen, strokeWidth: 1.8, roughness: 1, seed: sd() }));
+  ax.appendChild(rc.linearPath([[W - R - 9, H - B - 6], [W - R, H - B], [W - R - 9, H - B + 6]], { ...pen, strokeWidth: 1.8, roughness: .6, seed: sd() }));
+  ax.appendChild(rc.line(L, H - B, L, T - 6, { ...pen, strokeWidth: 1.8, roughness: 1, seed: sd() }));
+  ax.appendChild(rc.linearPath([[L - 6, T + 3], [L, T - 6], [L + 6, T + 3]], { ...pen, strokeWidth: 1.8, roughness: .6, seed: sd() }));
+}
+
+// one pinned, scroll-driven chart per section
+function scene(id, caps, build) {
+  const sec = document.getElementById(id), host = sec.querySelector('.host'), cap = sec.querySelector('.caption');
+  const svg = el('svg', { class: 'ch', 'aria-hidden': 'true' }, host);
+  let apply = null, lastW = 0, lastC = -1;
+  function draw() {
+    const W = Math.round(host.clientWidth); if (!W || !hasRough) return;
+    lastW = W; svg.innerHTML = '';
+    apply = build({ svg, W, mob: W < 560, vh: innerHeight || 720, rc: rough.svg(svg, { options: { disableMultiStroke: true } }) });
+  }
+  function update() {
+    const r = sec.getBoundingClientRect();
+    const p = clamp(-r.top / Math.max(1, r.height - innerHeight));
+    if (apply) apply(p);
+    let c = 0; caps.forEach((row, i) => { if (p >= row[0]) c = i; });
+    if (c !== lastC) { lastC = c; cap.textContent = caps[c][1]; }
+  }
+  let raf = 0;
+  const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; update(); }); };
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onScroll);
+  new ResizeObserver(() => { if (Math.round(host.clientWidth) !== lastW) { draw(); update(); } }).observe(host);
+  draw(); update();
+  if (document.fonts) document.fonts.ready.then(() => { draw(); update(); });
+}
+
+/* ============ 1 · the big-yes curve ============ */
+scene('s-yes', [
+  [0, 'Scroll to draw the curve.'],
+  [.005, 'The bigger the first yes, the fewer people say it now.'],
+  [.12, 'Three big first yeses: buying new, committing to 5,000 units, hiring for marketing.'],
+  [.26, 'Out on the right, people rarely say no. They just don’t decide yet.'],
+  [.36, 'IKEA: second-hand IKEA furniture costs around 60% less than new.'],
+  [.54, '120ft: brands would pay for each finished product instead of buying a factory run.'],
+  [.72, 'Holo: AI marketing for about $21 a month per business, on average.'],
+  [.88, 'Each one makes the first yes smaller, so more people can say it.'],
+], ({ svg, W, mob, vh, rc }) => {
+  // on a phone the chart is narrow, so give it more height to keep the labels apart
+  const H = Math.round(mob ? clamp(vh - 240, 360, 520) : clamp(Math.min(W * .66, vh - 190), 320, 470));
+  size(svg, W, H);
+  const L = 30, R = mob ? 8 : 14, T = 14, B = 50;
+  const X = v => L + 10 + v * (W - L - R - 20), Y = v => H - B - 8 - v * (H - B - T - 24);
+  const f = x => .04 + .92 * Math.exp(-2.6 * x);
+  let seed = 5; const sd = () => (seed += 7);
+  const fs = mob ? 12.5 : 14;
+
+  // the 'not yet' region: hachure under the right-hand end of the curve
+  const rp = [[X(.55), Y(0)]]; for (let x = .55; x <= 1.0001; x += .05) rp.push([X(x), Y(f(x))]); rp.push([X(1), Y(0)]);
+  const reg = el('g', { class: 'it c-hatch' }, svg);
+  reg.appendChild(rc.polygon(rp, { stroke: 'none', fill: 'currentColor', fillStyle: 'hachure', hachureGap: mob ? 6 : 7, hachureAngle: -41, fillWeight: 1, roughness: 1, seed: sd() }));
+  const regLab = el('g', { class: 'lab halo' }, svg);
+  txt(regLab, X(.75), Y(.06), 'not yet', { anchor: 'middle', size: mob ? 15 : 17, cls: 'mut' });
+
+  axes(rc, svg, L, R, T, B, W, H, sd);
+  const al = el('g', { class: 'axl' }, svg);
+  txt(al, X(0), H - B + 20, 'small', { size: fs });
+  txt(al, X(1), H - B + 20, 'big', { size: fs, anchor: 'end' });
+  txt(al, (L + W - R) / 2, H - B + 40, 'size of the first yes', { anchor: 'middle', size: mob ? 13.5 : 15 });
+  txt(al, L - 10, (T + H - B) / 2, 'how many say yes now', { anchor: 'middle', size: mob ? 13.5 : 15, rot: -90 });
+
+  // the curve, revealed by a growing clip
+  const cp = el('clipPath', { id: 'yesClip' }, el('defs', null, svg));
+  const clip = el('rect', { x: 0, y: -40, width: 0, height: H + 80 }, cp);
+  const cg = el('g', { class: 'c-ink', 'clip-path': 'url(#yesClip)' }, svg);
+  const pts = []; for (let i = 0; i <= 24; i++) { const x = i / 24; pts.push([X(x), Y(f(x))]); }
+  cg.appendChild(rc.curve(pts, { ...pen, strokeWidth: 2.4, roughness: .7, seed: sd() }));
+
+  // the closing arrow: a smaller yes
+  const ar = arrow(rc, svg, [X(.52), Y(.075)], [X(.07), Y(.075)], -10, { cls: 'c-orange', w: 2.6, seed: sd(), head: 12 });
+  const arGrow = grow(ar.line);
+  const arLab = el('g', { class: 'lab halo' }, svg);
+  txt(arLab, X(.30), Y(.075) - 14, 'a smaller yes', { anchor: 'middle', size: mob ? 15 : 17, cls: 'ink' });
+
+  // three decisions, in the order the issue tells them
+  const IT = [
+    // slot: the parked label's row; the rightmost dot gets the top row so leader lines never cross
+    { who: 'a shopper', before: 'buys it new', name: 'IKEA', after: '≈ 60% less, second-hand', x0: .68, x1: .43, win: [.36, .50], slot: 2 },
+    { who: 'a small brand', before: 'commits to 5,000 units', name: '120ft', after: 'pays per finished product', x0: .92, x1: .30, win: [.54, .68], slot: 0 },
+    { who: 'a small business', before: 'hires for marketing', name: 'Holo', after: '≈ $21 a month, on average', x0: .80, x1: .14, win: [.72, .86], slot: 1 },
+  ];
+  const trails = el('g', null, svg), leads = el('g', null, svg);
+  const lx = X(mob ? .34 : .52), lh = mob ? 15 : 17, gapY = mob ? 38 : 44;
+  const items = IT.map((it, i) => {
+    const trail = el('path', { class: 'trail', d: '' }, trails);
+    const lead = el('line', { class: 'lead' }, leads);
+    const g = el('g', { class: 'it' }, svg);
+    const dot = el('g', { class: 'dot c-ink' }, g);
+    dot.appendChild(rc.circle(0, 0, mob ? 11 : 12, { ...pen, fill: 'currentColor', fillStyle: 'solid', strokeWidth: 1, roughness: .6, seed: sd() }));
+    const lab = el('g', { class: 'lb' }, g);
+    const b1 = txt(lab, 0, 0, it.who, { size: fs - 1, cls: 'mut sw' });
+    const b2 = txt(lab, 0, lh, it.before, { size: fs, cls: 'ink sw' });
+    const a1 = txt(lab, 0, 0, it.name, { size: fs + 3, cls: 'ink sw off' });
+    const a2 = txt(lab, 0, lh, it.after, { size: fs, cls: 'ink sw off' });
+    const slot = [lx, Y(.95) + it.slot * gapY];
+    return { it, trail, lead, g, dot, lab, b: [b1, b2], a: [a1, a2], slot };
+  });
+
+  return p => {
+    clip.setAttribute('width', seg(p, 0, .10) * (W + 20));
+    const shown = Math.round(seg(p, .12, .24) * IT.length);
+    reg.classList.toggle('on', p > .26); regLab.classList.toggle('on', p > .28);
+    items.forEach((o, i) => {
+      const k = ease(seg(p, o.it.win[0], o.it.win[1]));
+      const x = o.it.x0 + (o.it.x1 - o.it.x0) * k, dx = X(x), dy = Y(f(x));
+      o.g.classList.toggle('on', i < shown);
+      o.dot.setAttribute('transform', `translate(${dx} ${dy})`);
+      o.dot.classList.toggle('c-orange', k > 0); o.dot.classList.toggle('c-ink', k <= 0);
+      const end = [dx + 13, dy + 4];
+      const pos = [o.slot[0] + (end[0] - o.slot[0]) * k, o.slot[1] + (end[1] - o.slot[1]) * k];
+      o.lab.setAttribute('transform', `translate(${pos[0]} ${pos[1]})`);
+      const named = k > .5;
+      o.b.forEach(t => t.classList.toggle('off', named)); o.a.forEach(t => t.classList.toggle('off', !named));
+      // dotted leader from the parked label down to its dot
+      const vis = i < shown && k < .98;
+      o.lead.setAttribute('x1', pos[0] - 6); o.lead.setAttribute('y1', pos[1] + lh * .55);
+      o.lead.setAttribute('x2', dx); o.lead.setAttribute('y2', dy - 7);
+      o.lead.style.opacity = vis ? (1 - k) : 0;
+      // the path it travelled, along the curve
+      if (k > 0) {
+        let d = ''; const n = 14;
+        for (let j = 0; j <= n; j++) { const xx = o.it.x0 + (x - o.it.x0) * j / n; d += (j ? 'L' : 'M') + X(xx).toFixed(1) + ' ' + Y(f(xx)).toFixed(1); }
+        o.trail.setAttribute('d', d);
+      } else o.trail.setAttribute('d', '');
+    });
+    const ka = seg(p, .88, .97); arGrow(ka); ar.head.classList.toggle('on', ka > .97); arLab.classList.toggle('on', ka > .5);
+  };
+});
+
+/* ============ 2 · Holo ============ */
+scene('s-holo', [
+  [0, 'Each dot is 100 paying businesses.'],
+  [.02, 'Holo reportedly signed up more than 20,000 paying businesses in about eight months.'],
+  [.42, 'Some rough maths on its reported $5 million of annual recurring revenue.'],
+  [.70, 'For one small business, that is a marketing production team for about $21 a month.'],
+  [.88, 'It’s an average, not a price. But it shows how small the yes has become.'],
+], ({ svg, W, mob, vh, rc }) => {
+  const cols = 20, rows = 10, N = cols * rows;
+  const step = mob ? Math.floor((W - 8) / cols) : Math.min(22, Math.floor(W * .54 / cols));
+  const gx = mob ? Math.round((W - cols * step) / 2) : 8, gy = 62;
+  const gw = cols * step, gh = rows * step;
+  const sx = mob ? 12 : gx + gw + 48, sy = mob ? gy + gh + 44 : gy + 22;
+  const H = mob ? sy + 182 : Math.max(gy + gh + 54, sy + 230);
+  size(svg, W, H);
+  let seed = 41; const sd = () => (seed += 7);
+  const fs = mob ? 15 : 17;
+
+  const head = el('g', { class: 'halo' }, svg);
+  const count = txt(head, gx, 30, '0', { size: mob ? 22 : 26, cls: 'ink' });
+  const unit = txt(head, gx, 50, 'paying businesses · each dot = 100', { size: mob ? 12.5 : 13.5, cls: 'mut' });
+  const eight = el('g', { class: 'lab halo' }, svg);
+  txt(eight, gx + gw, 30, 'in about eight months', { size: mob ? 13 : 15, anchor: 'end', cls: 'ink' });
+
+  const dots = [];
+  for (let i = 0; i < N; i++) {
+    const r = Math.floor(i / cols), c = i % cols;
+    const g = el('g', { class: 'it c-ink' }, svg);
+    g.appendChild(rc.circle(gx + c * step + step / 2, gy + r * step + step / 2, step * .56, { ...pen, fill: 'currentColor', fillStyle: 'solid', strokeWidth: .8, roughness: .5, seed: 900 + i }));
+    dots.push(g);
+  }
+  // one of them, circled
+  const pick = 3 * cols + 15, pr = Math.floor(pick / cols), pc = pick % cols;
+  const pcx = gx + pc * step + step / 2, pcy = gy + pr * step + step / 2;
+  const ring = el('g', { class: 'c-orange' }, svg);
+  ring.appendChild(rc.circle(pcx, pcy, step * 1.9, { ...pen, strokeWidth: 2.2, roughness: 1.4, seed: sd() }));
+  const ringGrow = grow(ring);
+
+  // the handwritten sum
+  const lines = [
+    ['$5,000,000 a year', 'ink'],
+    ['÷ 12 months', 'ink'],
+    ['÷ 20,000 businesses', 'ink'],
+  ];
+  const lh = fs * 1.75;
+  const sumG = lines.map(([s, c], i) => { const g = el('g', { class: 'it halo' }, svg); txt(g, sx, sy + i * lh, s, { size: fs, cls: c }); return g; });
+  const ruleG = el('g', { class: 'it c-ink' }, svg);
+  ruleG.appendChild(rc.line(sx - 4, sy + 2.45 * lh, sx + (mob ? 220 : 236), sy + 2.45 * lh, { ...pen, strokeWidth: 1.6, roughness: 1, seed: sd() }));
+  const ans = el('g', { class: 'it halo' }, svg);
+  const ansT = txt(ans, sx, sy + 3.45 * lh, '≈ $21', { size: fs + 12, cls: 'ink' });
+  txt(ans, sx, sy + 3.45 * lh + fs * 1.4, 'per business, a month', { size: fs - 1, cls: 'ink' });
+  let aw = mob ? 70 : 80; try { aw = ansT.getComputedTextLength() || aw; } catch (e) { /* keep estimate */ }
+  const und = el('g', { class: 'c-orange' }, svg);
+  und.appendChild(rc.line(sx - 2, sy + 3.45 * lh + 8, sx + aw + 4, sy + 3.45 * lh + 6, { ...pen, strokeWidth: 3, roughness: 1.2, seed: sd() }));
+  const undGrow = grow(und);
+  const avg = el('g', { class: 'lab halo' }, svg);
+  txt(avg, sx, sy + 3.45 * lh + fs * 2.9, 'an average, not a price', { size: fs - 2, cls: 'mut' });
+  const oneLab = el('g', { class: 'lab halo' }, svg);
+  txt(oneLab, pcx + step * 1.1, pcy - step * 1.1, 'one of them', { size: mob ? 13 : 15, cls: 'ink' });
+
+  return p => {
+    const n = Math.round(seg(p, .02, .38) * N);
+    dots.forEach((d, i) => d.classList.toggle('on', i < n));
+    count.textContent = n >= N ? '20,000+' : (n * 100).toLocaleString('en-GB');
+    eight.classList.toggle('on', n >= N);
+    const s = seg(p, .42, .66);
+    sumG.forEach((g, i) => g.classList.toggle('on', s > i * .22 + .001));
+    ruleG.classList.toggle('on', s > .66); ans.classList.toggle('on', s > .8);
+    undGrow(seg(p, .64, .70));
+    const kr = seg(p, .72, .82); ringGrow(kr); oneLab.classList.toggle('on', kr > .8);
+    dots.forEach((d, i) => d.classList.toggle('dim', kr > 0 && i !== pick));
+    avg.classList.toggle('on', p > .88);
+  };
+});
+
+/* ============ 3 · IKEA's second-hand loop ============ */
+scene('s-ikea', [
+  [0, 'Scroll to follow a piece of furniture.'],
+  [.005, 'IKEA sells something new. Usually, that is where its part ends.'],
+  [.14, 'People already resell IKEA furniture on eBay and Facebook, without IKEA.'],
+  [.36, 'Now IKEA runs its own second-hand marketplace in the UK and Ireland.'],
+  [.46, 'IKEA Family members buy and sell through it. The buyer pays around 60% less than new.'],
+  [.64, 'Sellers get 15% extra if they take store credit, which nudges the money back to IKEA.'],
+  [.84, 'The bigger prize may be the data: which products hold their value, and what to design next.'],
+], ({ svg, W, mob, vh, rc }) => {
+  const H = mob ? Math.round(clamp(vh - 200, 470, 580)) : Math.round(clamp(Math.min(W * .58, vh - 190), 380, 460));
+  size(svg, W, H);
+  let seed = 71; const sd = () => (seed += 7);
+  const fs = mob ? 12.5 : 14, ls = mob ? 12.5 : 14;
+  const B = (cx, cy, w, h) => ({ cx: cx * W, cy: cy * H, w, h });
+  // on a phone IKEA sits top right, so the sale, credit and data arrows each get their own lane
+  const Lyt = mob ? {
+    ikea: B(.78, .07, 100, 40), first: B(.21, .30, 104, 40), next: B(.21, .82, 104, 40),
+    market: B(.52, .55, 150, 50), ebay: B(.84, .40, 92, 46),
+  } : {
+    ikea: B(.11, .47, 108, 50), first: B(.50, .12, 140, 44), next: B(.50, .80, 140, 44),
+    market: B(.50, .47, 186, 54), ebay: B(.87, .47, 138, 48),
+  };
+  const { ikea, first, next, market, ebay } = Lyt;
+  const ctr = b => [b.cx, b.cy];
+  const link = (a, b, bend, o) => arrow(rc, svg, edge(a, ctr(b)), edge(b, ctr(a)), bend, { seed: sd(), ...o });
+
+  // arrows sit under the boxes
+  const oldG = el('g', { class: 'it' }, svg);
+  const old1 = arrow(rc, oldG, edge(first, ctr(ebay)), edge(ebay, ctr(first)), mob ? 10 : 28, { cls: 'c-muted', dash: [6, 5], seed: sd() });
+  const old2 = arrow(rc, oldG, edge(ebay, ctr(next)), edge(next, ctr(ebay)), mob ? 14 : 28, { cls: 'c-muted', dash: [6, 5], seed: sd() });
+  old1.head.classList.add('on'); old2.head.classList.add('on');
+  const sale = link(ikea, first, mob ? 18 : -30, { cls: 'c-ink' });
+  const toM = link(first, market, mob ? -8 : 0, { cls: 'c-ink', w: 2 });
+  const fromM = link(market, next, mob ? -8 : 0, { cls: 'c-ink', w: 2 });
+  const credit = link(first, ikea, mob ? 22 : -26, { cls: 'c-orange', w: 2.4 });
+  // money is orange; information is ink
+  const data = link(market, ikea, mob ? -20 : 0, { cls: 'c-ink', w: 1.8 });
+  const G = [sale, toM, fromM, credit, data].map(a => ({ a, grow: grow(a.line) }));
+
+  box(rc, svg, ikea, ['IKEA'], { fs: fs + 3, seed: sd() });
+  box(rc, svg, first, ['first owner'], { fs, seed: sd() });
+  box(rc, svg, next, ['next owner'], { fs, seed: sd() });
+  const ebG = el('g', { class: 'it' }, svg);
+  box(rc, ebG, ebay, mob ? ['eBay ·', 'Facebook'] : ['eBay · Facebook'], { fs, seed: sd(), cls: 'c-muted' });
+  const mkG = el('g', { class: 'it' }, svg);
+  box(rc, mkG, market, ['IKEA second-hand', 'marketplace'], { fs, seed: sd(), cls: 'c-orange', sw: 2.5 });
+
+  // labels
+  const lab = (x, y, rows, o = {}) => { const g = el('g', { class: 'lab halo' }, svg); rows.forEach((s, i) => txt(g, x, y + i * ls * 1.25, s, { size: ls, anchor: o.anchor || 'middle', cls: o.cls || 'ink' })); return g; };
+  const L = mob ? {
+    sale: lab(W * .40, H * .13, ['new sale']),
+    old: lab(W - 8, H * .70, ['already happening,', 'without IKEA.', 'IKEA ≈ 9% of Europe’s', 'used home-furnishing', 'market'], { anchor: 'end', cls: 'mut' }),
+    credit: lab(W * .49, H * .235, ['+15% as', 'store credit']),
+    sixty: lab(next.cx - next.w / 2, next.cy + next.h / 2 + 20, ['pays ≈ 60% less than new'], { anchor: 'start' }),
+    data: lab(W * .70, H * .22, ['data: what', 'holds its value'], { anchor: 'start' }),
+  } : {
+    sale: lab(W * .235, H * .2, ['new sale']),
+    old: lab(ebay.cx, ebay.cy + ebay.h / 2 + 24, ['already happening,', 'without IKEA.', 'IKEA ≈ 9% of Europe’s', 'used home-furnishing market'], { cls: 'mut' }),
+    credit: lab(W * .345, H * .385, ['+15% as store credit']),
+    sixty: lab(next.cx, next.cy + next.h / 2 + 22, ['pays ≈ 60% less than new']),
+    data: lab((ikea.cx + ikea.w / 2 + market.cx - market.w / 2) / 2, market.cy + 26, ['data: what', 'holds its value']),
+  };
+
+  return p => {
+    const k = [seg(p, 0, .12), seg(p, .46, .54), seg(p, .54, .62), seg(p, .64, .76), seg(p, .84, .96)];
+    G.forEach((o, i) => { o.grow(k[i]); o.a.head.classList.toggle('on', k[i] > .97); });
+    L.sale.classList.toggle('on', k[0] > .6);
+    const old = p > .16, mk = p > .36;
+    oldG.classList.toggle('on', old); ebG.classList.toggle('on', old);
+    L.old.classList.toggle('on', p > .24);
+    oldG.classList.toggle('dim', mk); ebG.classList.toggle('dim', mk);
+    mkG.classList.toggle('on', mk);
+    L.sixty.classList.toggle('on', k[2] > .9);
+    L.credit.classList.toggle('on', k[3] > .7);
+    L.data.classList.toggle('on', k[4] > .7);
+  };
+});
+})();
+</script>
